@@ -56,3 +56,5 @@ C:/esp32/control_iot/build/esp-idf/ulp/libulp.a
 C:/esp32/control_iot/build/esp-idf/unity/libunity.a
 C:/esp32/control_iot/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 C:/esp32/control_iot/build/esp-idf/main/libmain.a
+C:/esp32/control_iot/build/esp-idf/spidriver/libspidriver.a
+C:/esp32/control_iot/build/esp-idf/tft/libtft.a

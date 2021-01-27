@@ -2,7 +2,7 @@
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/control_iot")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/tft_demo")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -99,6 +99,10 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("C:/esp32/control_iot/build/esp-idf/unity/cmake_install.cmake")
   include("C:/esp32/control_iot/build/esp-idf/wifi_provisioning/cmake_install.cmake")
   include("C:/esp32/control_iot/build/esp-idf/main/cmake_install.cmake")
+  include("C:/esp32/control_iot/build/esp-idf/mkspiffs/cmake_install.cmake")
+  include("C:/esp32/control_iot/build/esp-idf/spidriver/cmake_install.cmake")
+  include("C:/esp32/control_iot/build/esp-idf/spiffs_image/cmake_install.cmake")
+  include("C:/esp32/control_iot/build/esp-idf/tft/cmake_install.cmake")
 
 endif()
 

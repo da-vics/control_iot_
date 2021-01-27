@@ -1,8 +1,8 @@
-# Install script for directory: C:/esp-idf/components/spiffs
+# Install script for directory: C:/esp32/control_iot/components/spiffs
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/control_iot")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/tft_demo")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

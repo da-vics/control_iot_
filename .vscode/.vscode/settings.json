@@ -1,0 +1,20 @@
+{
+  "terminal.integrated.shell.windows": "cmd.exe",
+  "terminal.integrated.shellArgs.windows": ["/k", "c:\\esp-idf\\export.bat"],
+  "terminal.integrated.shell.linux": "/bin/bash",
+  "terminal.integrated.shellArgs.linux": ["--init-file", "c:/esp-idf/export.sh", "-i"],
+  "terminal.integrated.shell.osx": "/bin/bash",
+  "terminal.integrated.shellArgs.osx": ["--init-file", "c:/esp-idf/export.sh", "-i"],
+  "files.associations": {
+    "*.md": "markdown",
+    "*.mdx": "tdx",
+    "stdio.h": "c",
+    "*.tcc": "cpp",
+    "*.ipp": "cpp"
+  },
+  "cmake.configureOnOpen": true,
+  "azure-iot-edge.defaultPlatform": {
+    "platform": "amd64",
+    "alias": null
+  }
+}

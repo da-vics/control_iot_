@@ -1303,6 +1303,157 @@
     {
         "children": [
             {
+                "children": [],
+                "depends_on": null,
+                "help": "Starting address of the SPIFFS area in ESP32 Flash\n",
+                "id": "SPIFFS_BASE_ADDR",
+                "name": "SPIFFS_BASE_ADDR",
+                "range": [
+                    1048576,
+                    33546240
+                ],
+                "title": "SPIFFS Base address",
+                "type": "hex"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": null,
+                "id": "SPIFFS_SIZE",
+                "name": "SPIFFS_SIZE",
+                "range": [
+                    262144,
+                    2097152
+                ],
+                "title": "SPIFFS Size in bytes",
+                "type": "int"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": null,
+                "id": "SPIFFS_LOG_BLOCK_SIZE",
+                "name": "SPIFFS_LOG_BLOCK_SIZE",
+                "range": [
+                    4098,
+                    65536
+                ],
+                "title": "SPIFFS Logical block size",
+                "type": "int"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Set it to the phisycal page size og the used SPI Flash chip.\n",
+                "id": "SPIFFS_LOG_PAGE_SIZE",
+                "name": "SPIFFS_LOG_PAGE_SIZE",
+                "range": [
+                    256,
+                    2048
+                ],
+                "title": "SPIFFS Logical page size",
+                "type": "int"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": null,
+                "id": "EXAMPLE_DISPLAY_TYPE",
+                "name": "EXAMPLE_DISPLAY_TYPE",
+                "range": null,
+                "title": null,
+                "type": "int"
+            },
+            {
+                "children": [
+                    {
+                        "children": [],
+                        "depends_on": "<choice>",
+                        "help": null,
+                        "id": "EXAMPLE_DISPLAY_TYPE0",
+                        "name": "EXAMPLE_DISPLAY_TYPE0",
+                        "range": null,
+                        "title": "None",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice>",
+                        "help": null,
+                        "id": "EXAMPLE_DISPLAY_TYPE1",
+                        "name": "EXAMPLE_DISPLAY_TYPE1",
+                        "range": null,
+                        "title": "ESP-WROVER-KIT Display",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice>",
+                        "help": null,
+                        "id": "EXAMPLE_DISPLAY_TYPE2",
+                        "name": "EXAMPLE_DISPLAY_TYPE2",
+                        "range": null,
+                        "title": "Adafruit TFT Feather display",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice>",
+                        "help": null,
+                        "id": "EXAMPLE_DISPLAY_TYPE3",
+                        "name": "EXAMPLE_DISPLAY_TYPE3",
+                        "range": null,
+                        "title": "M5Stack TFT display",
+                        "type": "bool"
+                    }
+                ],
+                "depends_on": null,
+                "help": "Select predefined display configuration\n",
+                "id": "tft-display-demo-configuration-select-predefined-display-configuration",
+                "name": null,
+                "title": "Select predefined display configuration",
+                "type": "choice"
+            },
+            {
+                "children": [
+                    {
+                        "children": [],
+                        "depends_on": "EXAMPLE_USE_WIFI",
+                        "help": "SSID (network name) for the demo to connect to.\n",
+                        "id": "WIFI_SSID",
+                        "name": "WIFI_SSID",
+                        "range": null,
+                        "title": "WiFi SSID",
+                        "type": "string"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "EXAMPLE_USE_WIFI",
+                        "help": "WiFi password (WPA or WPA2) for the demo to use.\n",
+                        "id": "WIFI_PASSWORD",
+                        "name": "WIFI_PASSWORD",
+                        "range": null,
+                        "title": "WiFi Password",
+                        "type": "string"
+                    }
+                ],
+                "depends_on": null,
+                "help": "If WiFi is used ntp server will be used to provide the exact time\nand file timestamps will be correct.\n",
+                "id": "EXAMPLE_USE_WIFI",
+                "name": "EXAMPLE_USE_WIFI",
+                "range": null,
+                "title": "Use wifi in TFT Demo",
+                "type": "bool"
+            }
+        ],
+        "depends_on": null,
+        "id": "tft-display-demo-configuration",
+        "title": "TFT Display DEMO Configuration",
+        "type": "menu"
+    },
+    {
+        "children": [
+            {
                 "children": [
                     {
                         "children": [],
@@ -11124,7 +11275,10 @@
                         "help": "Maximum TLS message length (in bytes) supported by mbedTLS.\n\n16384 is the default and this value is required to comply\nfully with TLS standards.\n\nHowever you can set a lower value in order to save RAM. This\nis safe if the other end of the connection supports Maximum\nFragment Length Negotiation Extension (max_fragment_length,\nsee RFC6066) or you know for certain that it will never send a\nmessage longer than a certain number of bytes.\n\nIf the value is set too low, symptoms are a failed TLS\nhandshake or a return value of MBEDTLS_ERR_SSL_INVALID_RECORD\n(-0x7200).\n",
                         "id": "MBEDTLS_SSL_MAX_CONTENT_LEN",
                         "name": "MBEDTLS_SSL_MAX_CONTENT_LEN",
-                        "range": null,
+                        "range": [
+                            512,
+                            16384
+                        ],
                         "title": "TLS maximum message content length",
                         "type": "int"
                     },
@@ -11136,10 +11290,7 @@
                                 "help": "This defines maximum incoming fragment length, overriding default\nmaximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN).\n",
                                 "id": "MBEDTLS_SSL_IN_CONTENT_LEN",
                                 "name": "MBEDTLS_SSL_IN_CONTENT_LEN",
-                                "range": [
-                                    512,
-                                    16384
-                                ],
+                                "range": null,
                                 "title": "TLS maximum incoming fragment length",
                                 "type": "int"
                             },
@@ -11149,10 +11300,7 @@
                                 "help": "This defines maximum outgoing fragment length, overriding default\nmaximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN).\n",
                                 "id": "MBEDTLS_SSL_OUT_CONTENT_LEN",
                                 "name": "MBEDTLS_SSL_OUT_CONTENT_LEN",
-                                "range": [
-                                    512,
-                                    16384
-                                ],
+                                "range": null,
                                 "title": "TLS maximum outgoing fragment length",
                                 "type": "int"
                             }
@@ -12616,234 +12764,6 @@
                 "depends_on": null,
                 "id": "component-config-spi-flash-driver",
                 "title": "SPI Flash driver",
-                "type": "menu"
-            },
-            {
-                "children": [
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "Define maximum number of partitions that can be mounted.\n",
-                        "id": "SPIFFS_MAX_PARTITIONS",
-                        "name": "SPIFFS_MAX_PARTITIONS",
-                        "range": [
-                            1,
-                            10
-                        ],
-                        "title": "Maximum Number of Partitions",
-                        "type": "int"
-                    },
-                    {
-                        "children": [
-                            {
-                                "children": [
-                                    {
-                                        "children": [],
-                                        "depends_on": "SPIFFS_CACHE",
-                                        "help": "Enables memory write caching for file descriptors in hydrogen.\n",
-                                        "id": "SPIFFS_CACHE_WR",
-                                        "name": "SPIFFS_CACHE_WR",
-                                        "range": null,
-                                        "title": "Enable SPIFFS Write Caching",
-                                        "type": "bool"
-                                    },
-                                    {
-                                        "children": [],
-                                        "depends_on": "SPIFFS_CACHE",
-                                        "help": "Enable/disable statistics on caching. Debug/test purpose only.\n",
-                                        "id": "SPIFFS_CACHE_STATS",
-                                        "name": "SPIFFS_CACHE_STATS",
-                                        "range": null,
-                                        "title": "Enable SPIFFS Cache Statistics",
-                                        "type": "bool"
-                                    }
-                                ],
-                                "depends_on": null,
-                                "help": "Enables/disable memory read caching of nucleus file system\noperations.\n",
-                                "id": "SPIFFS_CACHE",
-                                "name": "SPIFFS_CACHE",
-                                "range": null,
-                                "title": "Enable SPIFFS Cache",
-                                "type": "bool"
-                            }
-                        ],
-                        "depends_on": null,
-                        "id": "component-config-spiffs-configuration-spiffs-cache-configuration",
-                        "title": "SPIFFS Cache Configuration",
-                        "type": "menu"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "Always check header of each accessed page to ensure consistent state.\nIf enabled it will increase number of reads from flash, especially\nif cache is disabled.\n",
-                        "id": "SPIFFS_PAGE_CHECK",
-                        "name": "SPIFFS_PAGE_CHECK",
-                        "range": null,
-                        "title": "Enable SPIFFS Page Check",
-                        "type": "bool"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "Define maximum number of GC runs to perform to reach desired free pages.\n",
-                        "id": "SPIFFS_GC_MAX_RUNS",
-                        "name": "SPIFFS_GC_MAX_RUNS",
-                        "range": [
-                            1,
-                            255
-                        ],
-                        "title": "Set Maximum GC Runs",
-                        "type": "int"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "Enable/disable statistics on gc. Debug/test purpose only.\n",
-                        "id": "SPIFFS_GC_STATS",
-                        "name": "SPIFFS_GC_STATS",
-                        "range": null,
-                        "title": "Enable SPIFFS GC Statistics",
-                        "type": "bool"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "Logical page size of SPIFFS partition, in bytes. Must be multiple\nof flash page size (which is usually 256 bytes).\nLarger page sizes reduce overhead when storing large files, and\nimprove filesystem performance when reading large files.\nSmaller page sizes reduce overhead when storing small (< page size)\nfiles.\n",
-                        "id": "SPIFFS_PAGE_SIZE",
-                        "name": "SPIFFS_PAGE_SIZE",
-                        "range": [
-                            256,
-                            1024
-                        ],
-                        "title": "SPIFFS logical page size",
-                        "type": "int"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "Object name maximum length. Note that this length include the\nzero-termination character, meaning maximum string of characters\ncan at most be SPIFFS_OBJ_NAME_LEN - 1.\n\nSPIFFS_OBJ_NAME_LEN + SPIFFS_META_LENGTH should not exceed\nSPIFFS_PAGE_SIZE - 64.\n",
-                        "id": "SPIFFS_OBJ_NAME_LEN",
-                        "name": "SPIFFS_OBJ_NAME_LEN",
-                        "range": [
-                            1,
-                            256
-                        ],
-                        "title": "Set SPIFFS Maximum Name Length",
-                        "type": "int"
-                    },
-                    {
-                        "children": [
-                            {
-                                "children": [],
-                                "depends_on": "SPIFFS_USE_MAGIC",
-                                "help": "If this option is enabled, the magic will also be dependent\non the length of the filesystem. For example, a filesystem\nconfigured and formatted for 4 megabytes will not be accepted\nfor mounting with a configuration defining the filesystem as 2 megabytes.\n",
-                                "id": "SPIFFS_USE_MAGIC_LENGTH",
-                                "name": "SPIFFS_USE_MAGIC_LENGTH",
-                                "range": null,
-                                "title": "Enable SPIFFS Filesystem Length Magic",
-                                "type": "bool"
-                            }
-                        ],
-                        "depends_on": null,
-                        "help": "Enable this to have an identifiable spiffs filesystem.\nThis will look for a magic in all sectors to determine if this\nis a valid spiffs system or not at mount time.\n",
-                        "id": "SPIFFS_USE_MAGIC",
-                        "name": "SPIFFS_USE_MAGIC",
-                        "range": null,
-                        "title": "Enable SPIFFS Filesystem Magic",
-                        "type": "bool"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "This option sets the number of extra bytes stored in the file header.\nThese bytes can be used in an application-specific manner.\nSet this to at least 4 bytes to enable support for saving file\nmodification time.\n\nSPIFFS_OBJ_NAME_LEN + SPIFFS_META_LENGTH should not exceed\nSPIFFS_PAGE_SIZE - 64.\n",
-                        "id": "SPIFFS_META_LENGTH",
-                        "name": "SPIFFS_META_LENGTH",
-                        "range": null,
-                        "title": "Size of per-file metadata field",
-                        "type": "int"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": "SPIFFS_META_LENGTH >= 4",
-                        "help": "If enabled, then the first 4 bytes of per-file metadata will be used\nto store file modification time (mtime), accessible through\nstat/fstat functions.\nModification time is updated when the file is opened.\n",
-                        "id": "SPIFFS_USE_MTIME",
-                        "name": "SPIFFS_USE_MTIME",
-                        "range": null,
-                        "title": "Save file modification time",
-                        "type": "bool"
-                    },
-                    {
-                        "children": [
-                            {
-                                "children": [],
-                                "depends_on": null,
-                                "help": "Enabling this option will print general debug mesages to the console.\n",
-                                "id": "SPIFFS_DBG",
-                                "name": "SPIFFS_DBG",
-                                "range": null,
-                                "title": "Enable general SPIFFS debug",
-                                "type": "bool"
-                            },
-                            {
-                                "children": [],
-                                "depends_on": null,
-                                "help": "Enabling this option will print API debug mesages to the console.\n",
-                                "id": "SPIFFS_API_DBG",
-                                "name": "SPIFFS_API_DBG",
-                                "range": null,
-                                "title": "Enable SPIFFS API debug",
-                                "type": "bool"
-                            },
-                            {
-                                "children": [],
-                                "depends_on": null,
-                                "help": "Enabling this option will print GC debug mesages to the console.\n",
-                                "id": "SPIFFS_GC_DBG",
-                                "name": "SPIFFS_GC_DBG",
-                                "range": null,
-                                "title": "Enable SPIFFS Garbage Cleaner debug",
-                                "type": "bool"
-                            },
-                            {
-                                "children": [],
-                                "depends_on": "SPIFFS_CACHE",
-                                "help": "Enabling this option will print cache debug mesages to the console.\n",
-                                "id": "SPIFFS_CACHE_DBG",
-                                "name": "SPIFFS_CACHE_DBG",
-                                "range": null,
-                                "title": "Enable SPIFFS Cache debug",
-                                "type": "bool"
-                            },
-                            {
-                                "children": [],
-                                "depends_on": null,
-                                "help": "Enabling this option will print Filesystem Check debug mesages\nto the console.\n",
-                                "id": "SPIFFS_CHECK_DBG",
-                                "name": "SPIFFS_CHECK_DBG",
-                                "range": null,
-                                "title": "Enable SPIFFS Filesystem Check debug",
-                                "type": "bool"
-                            },
-                            {
-                                "children": [],
-                                "depends_on": null,
-                                "help": "Enable this option to enable SPIFFS_vis function in the API.\n",
-                                "id": "SPIFFS_TEST_VISUALISATION",
-                                "name": "SPIFFS_TEST_VISUALISATION",
-                                "range": null,
-                                "title": "Enable SPIFFS Filesystem Visualization",
-                                "type": "bool"
-                            }
-                        ],
-                        "depends_on": null,
-                        "id": "component-config-spiffs-configuration-debug-configuration",
-                        "title": "Debug Configuration",
-                        "type": "menu"
-                    }
-                ],
-                "depends_on": null,
-                "id": "component-config-spiffs-configuration",
-                "title": "SPIFFS Configuration",
                 "type": "menu"
             },
             {
