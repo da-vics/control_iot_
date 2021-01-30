@@ -34,6 +34,8 @@ void app_main(){
 	init_nvs();
   init_Screen();
   TurnOnScreen;
-	
-  xTaskCreate(drawBatIcon, "BatteryTask", 3072, NULL, 13, NULL);
+	drawImages();
+
+  xTaskCreate(ScrennUpdateTask, "BatteryTask", 3072, NULL, 13, NULL);
+  xTaskCreate(GetSystemParams, "SystemParamsTask", 2048, NULL, 10, NULL);
 }

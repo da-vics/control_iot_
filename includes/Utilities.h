@@ -1,3 +1,6 @@
+#ifndef UTILITIES_H
+#define UTILITIES_H
+
 #include "nvs_flash.h"
 
 bool nvs_started = false;
@@ -17,3 +20,5 @@ void init_nvs(){
 	}
 	ESP_ERROR_CHECK(err_v);
 }
+
+#endif //UTILITIES_H

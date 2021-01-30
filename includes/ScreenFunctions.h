@@ -1,24 +1,12 @@
-#include "tftspi.h"
-#include "tft.h"
-#include "spiffs_vfs.h"
-#include "esp_spiffs.h"
-#include "esp_log.h"
+#ifndef SCREENFUNCTIONS_H
+#define SCREENFUNCTIONS_H
+
+#include "SysteMeasurements.h"
 
 #define TurnOffScreen gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_OFF);
 #define TurnOnScreen gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_ON);
 #define ClearScreen TFT_fillScreen(TFT_BLACK);
-#define delay(milli) vTaskDelay(milli / portTICK_RATE_MS);
 #define SPI_BUS TFT_HSPI_HOST
-
-int batteryPercentage = 80;
-
-typedef enum
-{
-	Normal,
-	Charging
-}SystemState;
-
-SystemState sysState = Normal;
 
 //screen initialisations
 void init_Screen(){
@@ -95,7 +83,6 @@ void init_Screen(){
     delay(1000);
     ClearScreen;
     TurnOffScreen;
-	sysState = Charging;
 }
 
 void clear_batGauage(int x, int y, int w, int h, int r){
@@ -106,7 +93,45 @@ void clear_batGauage(int x, int y, int w, int h, int r){
 // 	b1 = b2 = b3 = b4 = b5 = b6 = false;
 // }
 
-static void drawBatIcon(){
+//display images
+void drawImages(){
+
+	TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
+	TFT_jpg_image(120, 10,3, SPIFFS_BASE_PATH "/images/Fan.jpg", NULL, 0);
+	TFT_jpg_image(205, 60,3, SPIFFS_BASE_PATH "/images/AcOutput.jpg", NULL, 0);
+	TFT_jpg_image(205, 125,3, SPIFFS_BASE_PATH "/images/GridCharger.jpg", NULL, 0);
+	TFT_jpg_image(205, 185,2, SPIFFS_BASE_PATH "/images/SolarInput.jpg", NULL, 0);
+}
+
+//update values
+void UpdateVal(){	
+  	
+		char loadtemp[6], solartemp[6], smpstemp[6];
+		sprintf((char *)loadtemp, "%iW", loadPwr);
+		sprintf((char *)smpstemp, "%iW", SmpsPwr);
+		sprintf((char *)solartemp, "%iW", SolarPwr);
+
+		TFT_setFont(DEJAVU18_FONT, NULL);
+
+		//load
+		_fg = TFT_GREEN;
+		_bg = TFT_BLACK;
+		TFT_fillRect(250, 50, 255,28, TFT_BLACK);
+		TFT_print(loadtemp,250 , 60);
+
+		//smps
+		_fg = TFT_WHITE;
+		TFT_fillRect(250, 120, 255,138, TFT_BLACK);
+		TFT_print(smpstemp,250 , 130);
+
+		//solar
+		color_t temp = {53,73,94};
+		_fg = temp;
+		TFT_fillRect(250, 190, 255,208, TFT_BLACK);
+		TFT_print(solartemp,250 , 200);
+}//
+
+static void ScrennUpdateTask(){
 	
 	TFT_drawRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
 	TFT_fillRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
@@ -117,6 +142,8 @@ static void drawBatIcon(){
 	bool bat1 = false,bat2=false,bat3=false,bat4=false,bat5=false,bat6=false;
 
 	while (1){
+
+		UpdateVal();
 
 		if(sysState == Charging){
 
@@ -150,7 +177,7 @@ static void drawBatIcon(){
 					TFT_fillRoundRect(25, 155, 60, 20, 5, TFT_GREEN);
 				}
 				else
-					clear_batGauage(25, 155, 60, 20, 5);
+					clear_batGauage(25, 155, 60, 20, 0);
 
 				if(bat6){
 					TFT_drawRoundRect(25, 177, 60, 2, 0, TFT_RED);
@@ -164,7 +191,7 @@ static void drawBatIcon(){
 					TFT_drawRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
 					TFT_fillRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
 				}
-				else clear_batGauage(25, 130, 60, 20, 5);
+				else clear_batGauage(25, 130, 60, 20, 0);
 
 				if(bat5){
 					TFT_drawRoundRect(25, 155, 60, 20, 5, TFT_GREEN);
@@ -178,7 +205,7 @@ static void drawBatIcon(){
 					TFT_drawRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
 					TFT_fillRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
 				}
-				else clear_batGauage(25, 105, 60, 20, 5);
+				else clear_batGauage(25, 105, 60, 20, 0);
 
 				if(bat5 && bat4){
 					TFT_drawRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
@@ -194,7 +221,7 @@ static void drawBatIcon(){
 				TFT_drawRoundRect(25, 80, 60, 20, 5, TFT_GREEN);
 				TFT_fillRoundRect(25, 80, 60, 20, 5, TFT_GREEN);
 				}
-				else clear_batGauage(25, 80, 60, 20, 5);
+				else clear_batGauage(25, 80, 60, 20, 0);
 
 				if(bat5 && bat4 && bat3){
 					TFT_drawRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
@@ -212,7 +239,7 @@ static void drawBatIcon(){
 				TFT_drawRoundRect(25, 55, 60, 20, 5, TFT_GREEN);
 				TFT_fillRoundRect(25, 55, 60, 20, 5, TFT_GREEN);
 				}
-				else clear_batGauage(25, 55, 60, 20, 5);
+				else clear_batGauage(25, 55, 60, 20, 0);
 
 				if(bat5 && bat4 && bat3 && bat2){
 					TFT_drawRoundRect(25, 80, 60, 20, 5, TFT_GREEN);
@@ -226,14 +253,24 @@ static void drawBatIcon(){
 				}
 			}//
 
-		}//
+		}//end
 
 		else if(sysState == Normal){
+
+			if(sw){
+				sw = false;
+				clear_batGauage(25, 55, 60, 20, 0); //100
+				clear_batGauage(25, 80, 60, 20, 0); // 80
+				clear_batGauage(25, 105, 60, 20, 0); // 60
+				clear_batGauage(25, 130, 60, 20, 0); // 40 
+				clear_batGauage(25, 155, 60, 20, 0); // 20
+				clear_batGauage(25, 177, 60, 2, 0); // 0
+			}
 			bool bat1Condition = (batteryPercentage >= 90) ? true : false;
 			bool bat2Condition = (batteryPercentage >= 80 && batteryPercentage<=89) ? true : false;
 			bool bat3Condition = (batteryPercentage >= 60 && batteryPercentage<=79) ? true : false;
 			bool bat4Condition = (batteryPercentage >= 40 && batteryPercentage<=59) ? true : false;
-			bool bat5Condition = (batteryPercentage >= 10 && batteryPercentage<=39) ? true : false;
+			bool bat5Condition = (batteryPercentage >= 20 && batteryPercentage<=39) ? true : false;
 
 			if(bat1Condition){	
 				TFT_drawRoundRect(25, 55, 60, 20, 5, TFT_GREEN);
@@ -241,7 +278,7 @@ static void drawBatIcon(){
 				TFT_setFont(UBUNTU16_FONT, NULL);
 				_fg = TFT_WHITE;
 				_bg = TFT_GREEN;
-				TFT_print("FULL", 40, 60);
+				TFT_print("FULL", 40, 57);
 			}
 
 			if(bat1Condition || bat2Condition){
@@ -250,7 +287,7 @@ static void drawBatIcon(){
 				TFT_setFont(UBUNTU16_FONT, NULL);
 				_fg = TFT_WHITE;
 				_bg = TFT_GREEN;
-				TFT_print("80%", 40, 85);
+				TFT_print("80%", 40, 82);
 			}
 
 			if(bat1Condition || bat2Condition || bat3Condition){
@@ -259,7 +296,7 @@ static void drawBatIcon(){
 				TFT_setFont(UBUNTU16_FONT, NULL);
 				_fg = TFT_WHITE;
 				_bg = TFT_GREEN;
-				TFT_print("60%", 40, 110);
+				TFT_print("60%", 40, 107);
 			}
 
 			if(bat1Condition || bat2Condition || bat3Condition || bat4Condition){
@@ -268,7 +305,7 @@ static void drawBatIcon(){
 				TFT_setFont(UBUNTU16_FONT, NULL);
 				_fg = TFT_WHITE;
 				_bg = TFT_GREEN;
-				TFT_print("40%", 40, 135);
+				TFT_print("40%", 40, 132);
 			}
 
 			if(bat1Condition || bat2Condition || bat3Condition || bat4Condition || bat5Condition){
@@ -282,15 +319,16 @@ static void drawBatIcon(){
 				TFT_drawRoundRect(25, 155, 60, 20, 5, temp);
 				TFT_fillRoundRect(25, 155, 60, 20, 5, temp);
 				TFT_setFont(UBUNTU16_FONT, NULL);
-				TFT_print("20%", 40, 160);
+				TFT_print("20%", 40, 158);
 			}
 
-			else if(batteryPercentage>0 && batteryPercentage<10){
+			else if(batteryPercentage>=0 && batteryPercentage<=90){
 				TFT_drawRoundRect(25, 177, 60, 2, 0, TFT_RED);
 				TFT_fillRoundRect(25, 177, 60, 2, 0, TFT_RED);
 			}
-	}
-
+	}//end
 	delay(500);
 	}
 }
+
+#endif //SCREENFUNCTIONS_H
