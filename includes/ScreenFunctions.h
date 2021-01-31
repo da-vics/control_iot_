@@ -96,8 +96,6 @@ void clear_batGauage(int x, int y, int w, int h, int r){
 //display images
 void drawImages(){
 
-	TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
-	TFT_jpg_image(120, 10,3, SPIFFS_BASE_PATH "/images/Fan.jpg", NULL, 0);
 	TFT_jpg_image(205, 60,3, SPIFFS_BASE_PATH "/images/AcOutput.jpg", NULL, 0);
 	TFT_jpg_image(205, 125,3, SPIFFS_BASE_PATH "/images/GridCharger.jpg", NULL, 0);
 	TFT_jpg_image(205, 185,2, SPIFFS_BASE_PATH "/images/SolarInput.jpg", NULL, 0);
@@ -107,7 +105,7 @@ void drawImages(){
 void UpdateVal(){	
   	
 		char loadtemp[6], solartemp[6], smpstemp[6];
-		sprintf((char *)loadtemp, "%iW", loadPwr);
+		sprintf((char *)loadtemp, "%iW", LoadPwr);
 		sprintf((char *)smpstemp, "%iW", SmpsPwr);
 		sprintf((char *)solartemp, "%iW", SolarPwr);
 

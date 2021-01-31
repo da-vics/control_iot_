@@ -14,23 +14,83 @@
 #include "esp_adc_cal.h"
 
 #define delay(milli) vTaskDelay(milli / portTICK_RATE_MS);
+#define MaxSampleTime 300
+#define ACS_Sensitivity 0.030518
+#define lowBattery 12.5
+#define fullBattery 15.5
 
-int batteryPercentage = 100,
-    LoadCurrent = 0 ,
-    SolarCurrent = 0,
-    SmpsCurrent = 0,
-    loadPwr = 0,
-    SolarPwr = 0,
-    SmpsPwr = 0;
+#define IotControl 22
+#define ChargerFanCtrl 21
+#define InverterFanCtrl 19
+#define PwrIndicator 5
+#define FlashLightBtn 17
+#define FlashLightCtrl 16
 
-typedef enum
-{
+uint32_t FlashState = false, InverterFanState = false;
+
+float LoadCurrent = 0,
+      SolarCurrent = 0,
+      SmpsCurrent = 0,
+      BatteryVoltage = 0;
+
+const int SolarOffset = 2020,
+          SmpsOffset = 2085,
+          LoadOffset = 2043;
+
+int SolarPwr = 0,
+    LoadPwr = 0,
+    SmpsPwr = 0,
+    batteryPercentage = 0;
+
+
+typedef enum{
 	Normal,
 	Charging
 }SystemState;
 
 SystemState sysState = Normal;
 bool sw = false;
+
+void PinSetups(){
+    
+    gpio_pad_select_gpio(IotControl);
+    gpio_pad_select_gpio(ChargerFanCtrl);
+    gpio_pad_select_gpio(InverterFanCtrl);
+    gpio_pad_select_gpio(PwrIndicator);
+    gpio_pad_select_gpio(FlashLightBtn);
+    gpio_pad_select_gpio(FlashLightCtrl);
+  
+	gpio_set_direction(IotControl, GPIO_MODE_INPUT);
+	gpio_set_direction(FlashLightBtn, GPIO_MODE_INPUT);
+	gpio_set_direction(ChargerFanCtrl, GPIO_MODE_OUTPUT);
+	gpio_set_direction(InverterFanCtrl, GPIO_MODE_OUTPUT);
+	gpio_set_direction(FlashLightCtrl, GPIO_MODE_OUTPUT);
+	gpio_set_direction(PwrIndicator, GPIO_MODE_OUTPUT);
+}//
+
+static void GetSystemInputTask(){
+
+while(1){
+    if (gpio_get_level(FlashLightBtn) == 1){
+        delay(100);
+         if(gpio_get_level(FlashLightBtn) == 1){
+                while (gpio_get_level(FlashLightBtn) ==1 )
+                    delay(500);
+
+                FlashState = !FlashState;
+                gpio_set_level(FlashLightCtrl, FlashState);
+                // printf("flash state is %i\n", FlashState);
+                if(FlashState)
+	                TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
+                else
+                    TFT_fillRoundRect(100, 10, 15, 40, 0, TFT_BLACK);
+                delay(500);
+        }
+    }
+    delay(100);
+}
+
+}//
 
 static void GetSystemParams(){
 
@@ -43,32 +103,67 @@ static void GetSystemParams(){
     adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11); //load
 
     while (1){
-        
-        // if(sysState == Normal)
-        //     sysState = Charging;
-        // else if (sysState == Charging){
-        //     sw = true;
-        //     sysState = Normal;
-        // }
-        // --SolarPwr;
-        // --loadPwr;
-        // --SmpsPwr;
-        // --batteryPercentage;
 
-       int batvol = adc1_get_raw(ADC1_CHANNEL_6);
-       int ntc =   adc1_get_raw(ADC1_CHANNEL_7);
+        int batvol = 0, ntc = 0, sol = 0, smps = 0, load = 0;
 
-       int sol, smps, load;
-       adc2_get_raw( ADC2_CHANNEL_7, ADC_WIDTH_12Bit, &load);
-       adc2_get_raw( ADC2_CHANNEL_9, ADC_WIDTH_12Bit, &smps);
-       adc2_get_raw( ADC2_CHANNEL_8, ADC_WIDTH_12Bit, &sol);
+        for (int i = 0; i < MaxSampleTime;++i){
+        int sol_temp, smps_temp, load_temp;
+        adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_12Bit, &load_temp);
+        adc2_get_raw(ADC2_CHANNEL_9, ADC_WIDTH_12Bit, &smps_temp);
+        adc2_get_raw(ADC2_CHANNEL_8, ADC_WIDTH_12Bit, &sol_temp);
+        sol += sol_temp;
+        smps += smps_temp;
+        load += load_temp;
+        batvol += adc1_get_raw(ADC1_CHANNEL_6);
+        ntc += adc1_get_raw(ADC1_CHANNEL_7);
+        }
 
-       printf("%i\n", batvol);
-       printf("%i\n", ntc);
-       printf("%i\n", sol);
-       printf("%i\n", smps);
-       printf("%i\n", load);
-       delay(3000);
+        sol /= MaxSampleTime;
+        load /= MaxSampleTime;
+        smps /= MaxSampleTime;
+        batvol /= MaxSampleTime;
+        ntc /= MaxSampleTime;
+
+        printf("batvol %i\n", batvol);
+        printf("ntc %i\n", ntc);
+        printf("sol %i\n", sol);
+        printf("smps %i\n", smps);
+        printf("load %i\n", load);
+
+        BatteryVoltage = ((3.3 / 4095.0) * batvol) * 5.54;
+        LoadCurrent = (load - LoadOffset) * ACS_Sensitivity;
+        SolarCurrent = (sol - SolarOffset) * ACS_Sensitivity;
+        SmpsCurrent = (smps - SmpsOffset) * ACS_Sensitivity;
+
+        LoadPwr = (int)(LoadCurrent * BatteryVoltage);
+        SolarPwr = (int)(SolarCurrent * BatteryVoltage);
+        SmpsPwr = (int)(SmpsCurrent * BatteryVoltage);
+        LoadPwr = (LoadPwr < 0) ? 0 : LoadPwr;
+        SolarPwr = (SolarPwr < 0) ? 0 : SolarPwr;
+        SmpsPwr = (SmpsPwr < 0) ? 0 : SmpsPwr;
+
+        if(LoadPwr>=100){
+            InverterFanState = true;
+            gpio_set_level(InverterFanCtrl,1);
+	        TFT_jpg_image(120, 10,3, SPIFFS_BASE_PATH "/images/Fan.jpg", NULL, 0);
+        }
+        else{
+            if(InverterFanState ){
+                gpio_set_level(InverterFanCtrl,0);
+                TFT_fillRoundRect(120, 10, 15, 40, 0, TFT_BLACK);
+            }
+            InverterFanState = false;
+        }//
+
+        batteryPercentage = ((BatteryVoltage - lowBattery) / 3) * 100;
+
+        printf("batvol %f\n", BatteryVoltage);
+        printf("sol %i\n", SolarPwr);
+        printf("smps %i\n", SmpsPwr);
+        printf("load %i\n", LoadPwr);
+        printf("Percentage %i\n", batteryPercentage);
+
+        delay(1000);
     }
 }
 
