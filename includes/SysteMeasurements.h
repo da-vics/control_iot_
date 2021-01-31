@@ -6,6 +6,7 @@
 #include "spiffs_vfs.h"
 #include "esp_spiffs.h"
 #include "esp_log.h"
+#include <math.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,6 +28,8 @@
 #define FlashLightCtrl 16
 
 uint32_t FlashState = false, InverterFanState = false;
+
+float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
 
 float LoadCurrent = 0,
       SolarCurrent = 0,
@@ -124,6 +127,13 @@ static void GetSystemParams(){
         batvol /= MaxSampleTime;
         ntc /= MaxSampleTime;
 
+        float r2 = 10000 * (4095 / (float)ntc - 1.0);
+        float logr2 = log(r2);
+        float Temp = (1.0 / (c1 + c2*logr2 + c3*logr2*logr2*logr2));
+        Temp = Temp - 273.15;
+
+        printf("temp %f\n", Temp);
+
         printf("batvol %i\n", batvol);
         printf("ntc %i\n", ntc);
         printf("sol %i\n", sol);
@@ -142,13 +152,14 @@ static void GetSystemParams(){
         SolarPwr = (SolarPwr < 0) ? 0 : SolarPwr;
         SmpsPwr = (SmpsPwr < 0) ? 0 : SmpsPwr;
 
-        if(LoadPwr>=100){
-            InverterFanState = true;
+        if(Temp>=40){
             gpio_set_level(InverterFanCtrl,1);
-	        TFT_jpg_image(120, 10,3, SPIFFS_BASE_PATH "/images/Fan.jpg", NULL, 0);
+            if(!InverterFanState)
+	            TFT_jpg_image(120, 10,3, SPIFFS_BASE_PATH "/images/Fan.jpg", NULL, 0);
+            InverterFanState = true;
         }
         else{
-            if(InverterFanState ){
+            if(InverterFanState){
                 gpio_set_level(InverterFanCtrl,0);
                 TFT_fillRoundRect(120, 10, 15, 40, 0, TFT_BLACK);
             }

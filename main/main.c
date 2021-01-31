@@ -39,5 +39,5 @@ void app_main(){
 
   xTaskCreate(ScrennUpdateTask, "BatteryTask", 3072, NULL, 13, NULL);
   xTaskCreate(GetSystemInputTask, "BatteryTask", 9072, NULL, 12, NULL);
-  xTaskCreate(GetSystemParams, "SystemParamsTask", 2048, NULL, 10, NULL);
+  xTaskCreate(GetSystemParams, "SystemParamsTask", 9072, NULL, 10, NULL);
 }
