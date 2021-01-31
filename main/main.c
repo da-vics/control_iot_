@@ -38,6 +38,6 @@ void app_main(){
 	drawImages();
 
   xTaskCreate(ScrennUpdateTask, "BatteryTask", 3072, NULL, 13, NULL);
-  xTaskCreate(GetSystemInputTask, "BatteryTask", 9072, NULL, 12, NULL);
-  xTaskCreate(GetSystemParams, "SystemParamsTask", 9072, NULL, 10, NULL);
+  xTaskCreate(GetSystemInputTask, "BatteryTask", 9072, NULL, 14, NULL);
+  xTaskCreate(GetSystemParams, "SystemParamsTask", 9072, NULL, 12, NULL);
 }

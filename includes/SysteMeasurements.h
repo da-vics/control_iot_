@@ -78,7 +78,7 @@ while(1){
         delay(100);
          if(gpio_get_level(FlashLightBtn) == 1){
                 while (gpio_get_level(FlashLightBtn) ==1 )
-                    delay(500);
+                    delay(1000);
 
                 FlashState = !FlashState;
                 gpio_set_level(FlashLightCtrl, FlashState);
@@ -87,10 +87,10 @@ while(1){
 	                TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
                 else
                     TFT_fillRoundRect(100, 10, 15, 40, 0, TFT_BLACK);
-                delay(500);
+                delay(300);
         }
     }
-    delay(100);
+    delay(50);
 }
 
 }//
