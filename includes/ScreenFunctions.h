@@ -8,6 +8,8 @@
 #define ClearScreen TFT_fillScreen(TFT_BLACK);
 #define SPI_BUS TFT_HSPI_HOST
 
+int PrevLoad = -1, PrevSmps = -1, prevSolar = -1;
+
 //screen initialisations
 void init_Screen(){
 
@@ -111,22 +113,30 @@ void UpdateVal(){
 
 		TFT_setFont(DEJAVU18_FONT, NULL);
 
-		//load
-		_fg = TFT_GREEN;
-		_bg = TFT_BLACK;
-		TFT_fillRect(250, 50, 255,28, TFT_BLACK);
-		TFT_print(loadtemp,250 , 60);
+		if(LoadPwr!=PrevLoad){ //load
+			_fg = TFT_GREEN;
+			_bg = TFT_BLACK;
+			TFT_fillRect(250, 50, 255,28, TFT_BLACK);
+			TFT_print(loadtemp,250 , 60);
+			PrevLoad = LoadPwr;
+		}//
 
-		//smps
-		_fg = TFT_WHITE;
-		TFT_fillRect(250, 120, 255,138, TFT_BLACK);
-		TFT_print(smpstemp,250 , 130);
+		if(SmpsPwr!=PrevSmps){ //smps
+			_fg = TFT_WHITE;
+			_bg = TFT_BLACK;
+			TFT_fillRect(250, 120, 255,138, TFT_BLACK);
+			TFT_print(smpstemp,250 , 130);
+			PrevSmps = SmpsPwr;
+		}//
 
-		//solar
-		color_t temp = {53,73,94};
-		_fg = temp;
-		TFT_fillRect(250, 190, 255,208, TFT_BLACK);
-		TFT_print(solartemp,250 , 200);
+		if(prevSolar!=SolarPwr){ //solar
+			color_t temp = {53,73,94};
+			_fg = temp;
+			_bg = TFT_BLACK;
+			TFT_fillRect(250, 190, 255,208, TFT_BLACK);
+			TFT_print(solartemp,250 , 200);
+			prevSolar = SolarPwr;
+		}//
 }//
 
 static void ScrennUpdateTask(){
@@ -140,12 +150,12 @@ static void ScrennUpdateTask(){
 	bool bat1 = false,bat2=false,bat3=false,bat4=false,bat5=false,bat6=false;
 
 	while (1){
-
+		
 		UpdateVal();
 
 		if(sysState == Charging){
 
-			bool seg5_6 = (batteryPercentage >= 0 && batteryPercentage <20) ? true : false;
+			bool seg5_6 = (batteryPercentage >= 0 && batteryPercentage <=19) ? true : false;
 			bool seg5_4 = (batteryPercentage >= 20 && batteryPercentage <40) ? true : false;
 			bool seg5_3 = (batteryPercentage >= 40 && batteryPercentage <60) ? true : false;
 			bool seg5_2 = (batteryPercentage >= 60 && batteryPercentage <80) ? true : false;
@@ -273,54 +283,33 @@ static void ScrennUpdateTask(){
 			if(bat1Condition){	
 				TFT_drawRoundRect(25, 55, 60, 20, 5, TFT_GREEN);
 				TFT_fillRoundRect(25, 55, 60, 20, 5, TFT_GREEN);
-				TFT_setFont(UBUNTU16_FONT, NULL);
-				_fg = TFT_WHITE;
-				_bg = TFT_GREEN;
-				TFT_print("FULL", 40, 57);
 			}
 
 			if(bat1Condition || bat2Condition){
 				TFT_drawRoundRect(25, 80, 60, 20, 5, TFT_GREEN);
 				TFT_fillRoundRect(25, 80, 60, 20, 5, TFT_GREEN);
-				TFT_setFont(UBUNTU16_FONT, NULL);
-				_fg = TFT_WHITE;
-				_bg = TFT_GREEN;
-				TFT_print("80%", 40, 82);
 			}
 
 			if(bat1Condition || bat2Condition || bat3Condition){
 				TFT_drawRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
 				TFT_fillRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
-				TFT_setFont(UBUNTU16_FONT, NULL);
-				_fg = TFT_WHITE;
-				_bg = TFT_GREEN;
-				TFT_print("60%", 40, 107);
 			}
 
 			if(bat1Condition || bat2Condition || bat3Condition || bat4Condition){
 				TFT_drawRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
 				TFT_fillRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
-				TFT_setFont(UBUNTU16_FONT, NULL);
-				_fg = TFT_WHITE;
-				_bg = TFT_GREEN;
-				TFT_print("40%", 40, 132);
 			}
 
 			if(bat1Condition || bat2Condition || bat3Condition || bat4Condition || bat5Condition){
 				color_t temp = TFT_GREEN;
-				_fg = TFT_WHITE;
-				_bg = TFT_GREEN;
 				if(bat5Condition){
 					temp = TFT_RED;
-					_bg = TFT_RED;
 				}
 				TFT_drawRoundRect(25, 155, 60, 20, 5, temp);
 				TFT_fillRoundRect(25, 155, 60, 20, 5, temp);
-				TFT_setFont(UBUNTU16_FONT, NULL);
-				TFT_print("20%", 40, 158);
 			}
 
-			else if(batteryPercentage>=0 && batteryPercentage<=90){
+			else if(batteryPercentage>=0 && batteryPercentage<=19){
 				TFT_drawRoundRect(25, 177, 60, 2, 0, TFT_RED);
 				TFT_fillRoundRect(25, 177, 60, 2, 0, TFT_RED);
 			}

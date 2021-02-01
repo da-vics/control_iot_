@@ -73,25 +73,25 @@ void PinSetups(){
 
 static void GetSystemInputTask(){
 
-while(1){
-    if (gpio_get_level(FlashLightBtn) == 1){
-        delay(100);
-         if(gpio_get_level(FlashLightBtn) == 1){
-                while (gpio_get_level(FlashLightBtn) ==1 )
-                    delay(1000);
+    while(1){
+        if (gpio_get_level(FlashLightBtn) == 1){
+            delay(100);
+             if(gpio_get_level(FlashLightBtn) == 1){
+                    while (gpio_get_level(FlashLightBtn) ==1 )
+                        ;
 
-                FlashState = !FlashState;
-                gpio_set_level(FlashLightCtrl, FlashState);
-                // printf("flash state is %i\n", FlashState);
-                if(FlashState)
-	                TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
-                else
-                    TFT_fillRoundRect(100, 10, 15, 40, 0, TFT_BLACK);
-                delay(300);
+                    FlashState = !FlashState;
+                    gpio_set_level(FlashLightCtrl, FlashState);
+                    // printf("flash state is %i\n", FlashState);
+                    if(FlashState)
+    	                TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
+                    else
+                        TFT_fillRoundRect(100, 10, 15, 40, 0, TFT_BLACK);
+                    delay(300);
+            }
         }
+        delay(50);
     }
-    delay(50);
-}
 
 }//
 
