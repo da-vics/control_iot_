@@ -14,6 +14,8 @@
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 
+#define ScreenTask(action) gpio_set_level(PIN_NUM_BCKL, action);
+
 #define delay(milli) vTaskDelay(milli / portTICK_RATE_MS);
 #define MaxSampleTime 300
 #define ACS_Sensitivity 0.030518
@@ -27,8 +29,9 @@
 #define FlashLightBtn 17
 #define FlashLightCtrl 16
 
-uint32_t FlashState = false, InverterFanState = false;
-
+uint32_t FlashState = 0, InverterFanState = 0;
+bool flashUpdate = false;
+uint8_t screenState = 0;
 float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
 
 float LoadCurrent = 0,
@@ -73,20 +76,39 @@ void PinSetups(){
 
 static void GetSystemInputTask(){
 
+    uint32_t Current_tick_count = 0,
+            New_tick_count = 0, 
+            delay_in_ticks = 0;
+
     while(1){
         if (gpio_get_level(FlashLightBtn) == 1){
             delay(100);
              if(gpio_get_level(FlashLightBtn) == 1){
-                    while (gpio_get_level(FlashLightBtn) ==1 )
-                        ;
 
-                    FlashState = !FlashState;
-                    gpio_set_level(FlashLightCtrl, FlashState);
-                    // printf("flash state is %i\n", FlashState);
-                    if(FlashState)
-    	                TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
-                    else
-                        TFT_fillRoundRect(100, 10, 15, 40, 0, TFT_BLACK);
+                    Current_tick_count = xTaskGetTickCount();
+                   	while (gpio_get_level(FlashLightBtn) ==1 ){
+
+						New_tick_count = xTaskGetTickCount();
+				   		delay_in_ticks = (New_tick_count - Current_tick_count)/1000;
+
+                        if(delay_in_ticks>=1){
+						    printf("time %i\n", delay_in_ticks);
+                            FlashState = !FlashState;
+                            gpio_set_level(FlashLightCtrl, FlashState);
+                            delay(300);
+                            flashUpdate = true;
+                            while (gpio_get_level(FlashLightBtn) ==1 )
+                                ;
+                        }//
+
+                        delay(100);
+                    }//
+                    
+					if(delay_in_ticks<1){
+						screenState = !screenState;
+						ScreenTask(screenState);
+					}// 
+
                     delay(300);
             }
         }
@@ -132,13 +154,13 @@ static void GetSystemParams(){
         float Temp = (1.0 / (c1 + c2*logr2 + c3*logr2*logr2*logr2));
         Temp = Temp - 273.15;
 
-        printf("temp %f\n", Temp);
+        // printf("temp %f\n", Temp);
 
-        printf("batvol %i\n", batvol);
-        printf("ntc %i\n", ntc);
-        printf("sol %i\n", sol);
-        printf("smps %i\n", smps);
-        printf("load %i\n", load);
+        // printf("batvol %i\n", batvol);
+        // printf("ntc %i\n", ntc);
+        // printf("sol %i\n", sol);
+        // printf("smps %i\n", smps);
+        // printf("load %i\n", load);
 
         BatteryVoltage = ((3.3 / 4095.0) * batvol) * 5.54;
         LoadCurrent = (load - LoadOffset) * ACS_Sensitivity;
@@ -168,11 +190,11 @@ static void GetSystemParams(){
 
         batteryPercentage = ((BatteryVoltage - lowBattery) / 3) * 100;
 
-        printf("batvol %f\n", BatteryVoltage);
-        printf("sol %i\n", SolarPwr);
-        printf("smps %i\n", SmpsPwr);
-        printf("load %i\n", LoadPwr);
-        printf("Percentage %i\n", batteryPercentage);
+        // printf("batvol %f\n", BatteryVoltage);
+        // printf("sol %i\n", SolarPwr);
+        // printf("smps %i\n", SmpsPwr);
+        // printf("load %i\n", LoadPwr);
+        // printf("Percentage %i\n", batteryPercentage);
 
         delay(1000);
     }

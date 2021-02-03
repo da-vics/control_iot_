@@ -1,8 +1,8 @@
-# Install script for directory: C:/esp32/control_iot/main
+# Install script for directory: C:/esp32/control_iot_/main
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/tft_demo")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/davics")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

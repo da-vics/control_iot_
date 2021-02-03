@@ -3,8 +3,6 @@
 
 #include "SysteMeasurements.h"
 
-#define TurnOffScreen gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_OFF);
-#define TurnOnScreen gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_ON);
 #define ClearScreen TFT_fillScreen(TFT_BLACK);
 #define SPI_BUS TFT_HSPI_HOST
 
@@ -83,8 +81,9 @@ void init_Screen(){
 	TFT_setFont(TestFont, NULL);
 	TFT_print("The Future", CENTER, CENTER);
     delay(1000);
-    ClearScreen;
-    TurnOffScreen;
+	ClearScreen;
+	screenState = 0;
+	ScreenTask(screenState);
 }
 
 void clear_batGauage(int x, int y, int w, int h, int r){
@@ -105,7 +104,15 @@ void drawImages(){
 
 //update values
 void UpdateVal(){	
-  	
+
+		if(flashUpdate){
+   			if(FlashState)
+   		   		TFT_jpg_image(100, 10,3, SPIFFS_BASE_PATH "/images/FlashLight.jpg", NULL, 0);
+   			else
+   		    	TFT_fillRoundRect(100, 10, 15, 40, 0, TFT_BLACK);
+			flashUpdate = false;
+		}//
+
 		char loadtemp[6], solartemp[6], smpstemp[6];
 		sprintf((char *)loadtemp, "%iW", LoadPwr);
 		sprintf((char *)smpstemp, "%iW", SmpsPwr);
@@ -139,7 +146,7 @@ void UpdateVal(){
 		}//
 }//
 
-static void ScrennUpdateTask(){
+static void ScreenUpdateTask(){
 	
 	TFT_drawRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
 	TFT_fillRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
