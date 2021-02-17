@@ -9,13 +9,18 @@
 #include "esp_system.h"
 #include "esp_heap_caps.h"
 
-#include "esp_wifi.h"
+// #include "esp_wifi.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
 
 #include "../includes/ScreenFunctions.h"
 #include "../includes/Utilities.h"
+#include "../includes/RGBCtrl.h"
+
+// extern "C" {
+//   void app_main();
+// }
 
 void app_main(){
 
@@ -23,8 +28,11 @@ void app_main(){
   PinSetups();
   init_Screen();
 	drawImages();
+  led_strip_install();
 
   xTaskCreate(ScreenUpdateTask, "BatteryTask", 9072, NULL, 13, NULL);
   xTaskCreate(GetSystemInputTask, "SystemInputTask", 9072, NULL, 14, NULL);
   xTaskCreate(GetSystemParams, "SystemParamsTask", 9072, NULL, 12, NULL);
+  xTaskCreate(test, "test", 4072, NULL, 10, NULL);
+
 }

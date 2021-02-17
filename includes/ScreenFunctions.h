@@ -7,6 +7,7 @@
 #define SPI_BUS TFT_HSPI_HOST
 
 int PrevLoad = -1, PrevSmps = -1, prevSolar = -1;
+bool loadAnimate = false, solarAnimate = false, smpsAnimate = false;
 
 //screen initialisations
 void init_Screen(){
@@ -79,7 +80,7 @@ void init_Screen(){
 
     _fg = TFT_CYAN;
 	TFT_setFont(TestFont, NULL);
-	TFT_print("The Future", CENTER, CENTER);
+	TFT_print("PowerFlow", CENTER, CENTER);
     delay(1000);
 	ClearScreen;
 	screenState = 0;
@@ -120,11 +121,38 @@ void UpdateVal(){
 
 		TFT_setFont(DEJAVU18_FONT, NULL);
 
+		if(LoadPwr>=5){
+			loadAnimate = !loadAnimate;
+			if(loadAnimate)
+				TFT_drawRoundRect(200, 55, 33,33, 5, TFT_GREEN);
+			else 
+				TFT_drawRoundRect(200, 55, 33,33, 5, TFT_BLACK);
+		}//
+
+		if(SmpsPwr>=5){
+			smpsAnimate = !smpsAnimate;
+			if(smpsAnimate)
+				TFT_drawRoundRect(200, 120, 33,35, 5, TFT_WHITE);
+			else 
+				TFT_drawRoundRect(200, 120, 33,35, 5, TFT_BLACK);
+		}//
+
+		if(SolarPwr>=5){
+			color_t temp = {53,73,94};
+			solarAnimate = !solarAnimate;
+			if(solarAnimate)
+				TFT_drawRoundRect(200, 190, 40,33, 5, temp);
+			else 
+				TFT_drawRoundRect(200, 190, 40,33, 5, TFT_BLACK);
+		}//
+
+		
+
 		if(LoadPwr!=PrevLoad){ //load
 			_fg = TFT_GREEN;
 			_bg = TFT_BLACK;
-			TFT_fillRect(250, 50, 255,28, TFT_BLACK);
-			TFT_print(loadtemp,250 , 60);
+			TFT_fillRect(250, 55, 255,28, TFT_BLACK);
+			TFT_print(loadtemp,250 , 65);
 			PrevLoad = LoadPwr;
 		}//
 
@@ -147,13 +175,12 @@ void UpdateVal(){
 }//
 
 static void ScreenUpdateTask(){
-	
+
 	TFT_drawRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
 	TFT_fillRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
 
 	TFT_drawRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
 	TFT_fillRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
-
 	bool bat1 = false,bat2=false,bat3=false,bat4=false,bat5=false,bat6=false;
 
 	while (1){
@@ -324,5 +351,6 @@ static void ScreenUpdateTask(){
 	delay(500);
 	}
 }
+
 
 #endif //SCREENFUNCTIONS_H

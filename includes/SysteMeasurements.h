@@ -1,6 +1,7 @@
 #ifndef SYSTEM_MEASUREMENTS_H
 #define SYSTEM_MEASUREMENTS_H
 
+
 #include "tftspi.h"
 #include "tft.h"
 #include "spiffs_vfs.h"
@@ -19,10 +20,11 @@
 #define delay(milli) vTaskDelay(milli / portTICK_RATE_MS);
 #define MaxSampleTime 300
 #define ACS_Sensitivity 0.030518
-#define lowBattery 12.5
-#define fullBattery 15.5
+#define lowBattery 12.5f
+#define fullBattery 15.0f
+float batCal = (fullBattery - lowBattery);
 
-#define IotControl 22
+#define inverterCtrl 22
 #define ChargerFanCtrl 21
 #define InverterFanCtrl 19
 #define PwrIndicator 5
@@ -39,15 +41,14 @@ float LoadCurrent = 0,
       SmpsCurrent = 0,
       BatteryVoltage = 0;
 
-const int SolarOffset = 2020,
-          SmpsOffset = 2085,
-          LoadOffset = 2043;
+const int SolarOffset = 1980,
+          SmpsOffset = 2010,
+          LoadOffset = 2080;
 
 int SolarPwr = 0,
     LoadPwr = 0,
     SmpsPwr = 0,
     batteryPercentage = 0;
-
 
 typedef enum{
 	Normal,
@@ -59,14 +60,14 @@ bool sw = false;
 
 void PinSetups(){
     
-    gpio_pad_select_gpio(IotControl);
+    gpio_pad_select_gpio(inverterCtrl);
     gpio_pad_select_gpio(ChargerFanCtrl);
     gpio_pad_select_gpio(InverterFanCtrl);
     gpio_pad_select_gpio(PwrIndicator);
     gpio_pad_select_gpio(FlashLightBtn);
     gpio_pad_select_gpio(FlashLightCtrl);
   
-	gpio_set_direction(IotControl, GPIO_MODE_INPUT);
+	gpio_set_direction(inverterCtrl, GPIO_MODE_INPUT);
 	gpio_set_direction(FlashLightBtn, GPIO_MODE_INPUT);
 	gpio_set_direction(ChargerFanCtrl, GPIO_MODE_OUTPUT);
 	gpio_set_direction(InverterFanCtrl, GPIO_MODE_OUTPUT);
@@ -81,6 +82,20 @@ static void GetSystemInputTask(){
             delay_in_ticks = 0;
 
     while(1){
+        
+        if (gpio_get_level(inverterCtrl) == 1){
+            printf("%s\n", "in");
+            delay(100);
+            if (gpio_get_level(inverterCtrl) == 1){
+
+                while (gpio_get_level(inverterCtrl) == 1)
+                    ;
+                screenState = !screenState;
+                printf("%s\n", "pressed!");
+                ScreenTask(screenState);
+             }
+           }///
+
         if (gpio_get_level(FlashLightBtn) == 1){
             delay(100);
              if(gpio_get_level(FlashLightBtn) == 1){
@@ -88,60 +103,55 @@ static void GetSystemInputTask(){
                     Current_tick_count = xTaskGetTickCount();
                    	while (gpio_get_level(FlashLightBtn) ==1 ){
 
-						New_tick_count = xTaskGetTickCount();
-				   		delay_in_ticks = (New_tick_count - Current_tick_count)/1000;
+						// New_tick_count = xTaskGetTickCount();
+				   		// delay_in_ticks = (New_tick_count - Current_tick_count)/1000;
 
-                        if(delay_in_ticks>=1){
-						    printf("time %i\n", delay_in_ticks);
-                            FlashState = !FlashState;
-                            gpio_set_level(FlashLightCtrl, FlashState);
-                            delay(300);
-                            flashUpdate = true;
-                            while (gpio_get_level(FlashLightBtn) ==1 )
-                                ;
-                        }//
-
-                        delay(100);
+                        // if(delay_in_ticks>=1){
+						//     printf("time %i\n", delay_in_ticks);
+                        //     FlashState = !FlashState;
+                        //     gpio_set_level(FlashLightCtrl, FlashState);
+                        //     flashUpdate = true;
+                        //     delay(300);
+                        //     while (gpio_get_level(FlashLightBtn) ==1 )
+                        //         ;
+                        // }//
+                        // delay(100);
                     }//
                     
-					if(delay_in_ticks<1){
-						screenState = !screenState;
-						ScreenTask(screenState);
-					}// 
-
+			        FlashState = !FlashState;
+                    gpio_set_level(FlashLightCtrl, FlashState);
+                    printf("%s\n", "flash");
+                    flashUpdate = true;
                     delay(300);
             }
         }
+
         delay(50);
     }
-
 }//
 
 static void GetSystemParams(){
 
     adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_6,ADC_ATTEN_DB_11); // batVoltage
-    adc1_config_channel_atten(ADC1_CHANNEL_7,ADC_ATTEN_DB_11); // ntc_temp
+    adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_11); // batVoltage
+    adc1_config_channel_atten(ADC1_CHANNEL_3,ADC_ATTEN_DB_11); // ntc_temp
 
-    adc2_config_channel_atten(ADC2_CHANNEL_8, ADC_ATTEN_DB_11); //solar
-    adc2_config_channel_atten(ADC2_CHANNEL_9, ADC_ATTEN_DB_11); //smps
-    adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11); //load
+    adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11); //solar
+    adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11); //smps
+    adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11); //load
 
-    while (1){
+        while (1){
 
         int batvol = 0, ntc = 0, sol = 0, smps = 0, load = 0;
 
         for (int i = 0; i < MaxSampleTime;++i){
-        int sol_temp, smps_temp, load_temp;
-        adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_12Bit, &load_temp);
-        adc2_get_raw(ADC2_CHANNEL_9, ADC_WIDTH_12Bit, &smps_temp);
-        adc2_get_raw(ADC2_CHANNEL_8, ADC_WIDTH_12Bit, &sol_temp);
-        sol += sol_temp;
-        smps += smps_temp;
-        load += load_temp;
-        batvol += adc1_get_raw(ADC1_CHANNEL_6);
-        ntc += adc1_get_raw(ADC1_CHANNEL_7);
-        }
+
+            sol += adc1_get_raw(ADC1_CHANNEL_6);
+            smps += adc1_get_raw(ADC1_CHANNEL_7);
+            load += adc1_get_raw(ADC1_CHANNEL_4);
+            batvol += adc1_get_raw(ADC1_CHANNEL_0);
+            ntc += adc1_get_raw(ADC1_CHANNEL_3);
+        }//
 
         sol /= MaxSampleTime;
         load /= MaxSampleTime;
@@ -154,13 +164,13 @@ static void GetSystemParams(){
         float Temp = (1.0 / (c1 + c2*logr2 + c3*logr2*logr2*logr2));
         Temp = Temp - 273.15;
 
-        // printf("temp %f\n", Temp);
+        printf("temp %f\n", Temp);
 
-        // printf("batvol %i\n", batvol);
-        // printf("ntc %i\n", ntc);
-        // printf("sol %i\n", sol);
-        // printf("smps %i\n", smps);
-        // printf("load %i\n", load);
+        printf("batvol %i\n", batvol);
+        printf("ntc %i\n", ntc);
+        printf("sol %i\n", sol);
+        printf("smps %i\n", smps);
+        printf("load %i\n", load);
 
         BatteryVoltage = ((3.3 / 4095.0) * batvol) * 5.54;
         LoadCurrent = (load - LoadOffset) * ACS_Sensitivity;
@@ -174,12 +184,19 @@ static void GetSystemParams(){
         SolarPwr = (SolarPwr < 0) ? 0 : SolarPwr;
         SmpsPwr = (SmpsPwr < 0) ? 0 : SmpsPwr;
 
+        if(SmpsPwr>=10 || SolarPwr>=10)
+            sysState = Charging;
+        
+        else
+            sysState = Normal;
+            
         if(Temp>=40){
             gpio_set_level(InverterFanCtrl,1);
             if(!InverterFanState)
 	            TFT_jpg_image(120, 10,3, SPIFFS_BASE_PATH "/images/Fan.jpg", NULL, 0);
             InverterFanState = true;
-        }
+        }//
+
         else{
             if(InverterFanState){
                 gpio_set_level(InverterFanCtrl,0);
@@ -188,7 +205,7 @@ static void GetSystemParams(){
             InverterFanState = false;
         }//
 
-        batteryPercentage = ((BatteryVoltage - lowBattery) / 3) * 100;
+        batteryPercentage = ((BatteryVoltage - lowBattery) / batCal) * 100;
 
         // printf("batvol %f\n", BatteryVoltage);
         // printf("sol %i\n", SolarPwr);
