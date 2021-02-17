@@ -16,6 +16,7 @@
 #include "esp_adc_cal.h"
 
 #define ScreenTask(action) gpio_set_level(PIN_NUM_BCKL, action);
+#define ClearScreen TFT_fillScreen(TFT_BLACK);
 
 #define delay(milli) vTaskDelay(milli / portTICK_RATE_MS);
 #define MaxSampleTime 300
@@ -24,15 +25,23 @@
 #define fullBattery 15.0f
 float batCal = (fullBattery - lowBattery);
 
-#define inverterCtrl 22
+#define OverloadSense 26
+#define inverterCtrlBtn 22
+#define inverterCtrl 18
+#define ChargerCtrl 18
 #define ChargerFanCtrl 21
 #define InverterFanCtrl 19
 #define PwrIndicator 5
 #define FlashLightBtn 17
 #define FlashLightCtrl 16
 
-uint32_t FlashState = 0, InverterFanState = 0;
-bool flashUpdate = false;
+uint32_t inverterState = 0,
+         FlashState = 0,
+         InverterFanState = 0;
+
+bool flashUpdate = false,
+     defaultLoad = true;
+
 uint8_t screenState = 0;
 float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
 
@@ -50,29 +59,40 @@ int SolarPwr = 0,
     SmpsPwr = 0,
     batteryPercentage = 0;
 
-typedef enum{
-	Normal,
-	Charging
-}SystemState;
+typedef enum
+{
+    None,
+    Normal,
+    Charging,
+    Overload,
+    BatteryLow
+} SystemState;
 
 SystemState sysState = Normal;
 bool sw = false;
 
-void PinSetups(){
-    
+void PinSetups()
+{
+
+    gpio_pad_select_gpio(inverterCtrlBtn);
     gpio_pad_select_gpio(inverterCtrl);
     gpio_pad_select_gpio(ChargerFanCtrl);
+    gpio_pad_select_gpio(ChargerCtrl);
     gpio_pad_select_gpio(InverterFanCtrl);
     gpio_pad_select_gpio(PwrIndicator);
     gpio_pad_select_gpio(FlashLightBtn);
     gpio_pad_select_gpio(FlashLightCtrl);
-  
-	gpio_set_direction(inverterCtrl, GPIO_MODE_INPUT);
-	gpio_set_direction(FlashLightBtn, GPIO_MODE_INPUT);
-	gpio_set_direction(ChargerFanCtrl, GPIO_MODE_OUTPUT);
-	gpio_set_direction(InverterFanCtrl, GPIO_MODE_OUTPUT);
-	gpio_set_direction(FlashLightCtrl, GPIO_MODE_OUTPUT);
-	gpio_set_direction(PwrIndicator, GPIO_MODE_OUTPUT);
+    gpio_pad_select_gpio(OverloadSense);
+
+    gpio_set_direction(inverterCtrlBtn, GPIO_MODE_INPUT);
+    gpio_set_direction(OverloadSense, GPIO_MODE_INPUT);
+    gpio_set_direction(FlashLightBtn, GPIO_MODE_INPUT);
+    gpio_set_direction(ChargerFanCtrl, GPIO_MODE_OUTPUT);
+    gpio_set_direction(ChargerCtrl, GPIO_MODE_OUTPUT);
+    gpio_set_direction(InverterFanCtrl, GPIO_MODE_OUTPUT);
+    gpio_set_direction(inverterCtrl, GPIO_MODE_OUTPUT);
+    gpio_set_direction(FlashLightCtrl, GPIO_MODE_OUTPUT);
+    gpio_set_direction(PwrIndicator, GPIO_MODE_OUTPUT);
 }//
 
 static void GetSystemInputTask(){
@@ -82,17 +102,31 @@ static void GetSystemInputTask(){
             delay_in_ticks = 0;
 
     while(1){
+
+        if (gpio_get_level(OverloadSense) == 0 && sysState!=Overload){
+            delay(100);
+            if (gpio_get_level(OverloadSense) == 0){
+                inverterState = 0;
+                gpio_set_level(inverterCtrl, inverterState);
+                sysState = Overload;
+            }//
+        }//
         
-        if (gpio_get_level(inverterCtrl) == 1){
+        if (gpio_get_level(inverterCtrlBtn) == 1){
             printf("%s\n", "in");
             delay(100);
-            if (gpio_get_level(inverterCtrl) == 1){
+            if (gpio_get_level(inverterCtrlBtn) == 1){
 
-                while (gpio_get_level(inverterCtrl) == 1)
+                while (gpio_get_level(inverterCtrlBtn) == 1)
                     ;
                 screenState = !screenState;
+                inverterState = screenState;
+                gpio_set_level(inverterCtrl, inverterState);
                 printf("%s\n", "pressed!");
                 ScreenTask(screenState);
+                if(sysState == None){
+                    defaultLoad = true;
+                }
              }
            }///
 
@@ -124,7 +158,7 @@ static void GetSystemInputTask(){
                     flashUpdate = true;
                     delay(300);
             }
-        }
+        }//
 
         delay(50);
     }
@@ -164,18 +198,36 @@ static void GetSystemParams(){
         float Temp = (1.0 / (c1 + c2*logr2 + c3*logr2*logr2*logr2));
         Temp = Temp - 273.15;
 
-        printf("temp %f\n", Temp);
+        // printf("temp %f\n", Temp);
 
-        printf("batvol %i\n", batvol);
-        printf("ntc %i\n", ntc);
-        printf("sol %i\n", sol);
-        printf("smps %i\n", smps);
-        printf("load %i\n", load);
+        // printf("batvol %i\n", batvol);
+        // printf("ntc %i\n", ntc);
+        // printf("sol %i\n", sol);
+        // printf("smps %i\n", smps);
+        // printf("load %i\n", load);
 
         BatteryVoltage = ((3.3 / 4095.0) * batvol) * 5.54;
         LoadCurrent = (load - LoadOffset) * ACS_Sensitivity;
         SolarCurrent = (sol - SolarOffset) * ACS_Sensitivity;
         SmpsCurrent = (smps - SmpsOffset) * ACS_Sensitivity;
+
+        if(BatteryVoltage<15)
+            gpio_set_level(ChargerCtrl,1);
+        
+        else 
+            gpio_set_level(ChargerCtrl,0);
+
+        if(BatteryVoltage < lowBattery && sysState!=None){
+            sysState = BatteryLow;
+            inverterState = 0;
+            gpio_set_level(inverterCtrl, inverterState);
+        }//
+
+        else{
+            if(sysState !=None){
+                sysState = Normal;
+            }
+        }//
 
         LoadPwr = (int)(LoadCurrent * BatteryVoltage);
         SolarPwr = (int)(SolarCurrent * BatteryVoltage);
@@ -184,12 +236,37 @@ static void GetSystemParams(){
         SolarPwr = (SolarPwr < 0) ? 0 : SolarPwr;
         SmpsPwr = (SmpsPwr < 0) ? 0 : SmpsPwr;
 
-        if(SmpsPwr>=10 || SolarPwr>=10)
+        if(SmpsPwr>=10 || SolarPwr>=10){
             sysState = Charging;
+            ScreenTask(1);
+        }
         
-        else
-            sysState = Normal;
-            
+        else{
+            if(sysState == Charging){
+                sysState = Normal;
+                if(screenState == 0)
+                    ScreenTask(0);
+            }
+        }//
+
+        if(LoadPwr>310 && sysState!=None){
+
+            if(LoadPwr>500){
+                sysState = Overload;
+                inverterState = 0;
+                gpio_set_level(inverterCtrl, inverterState);
+            }
+
+            else{
+                delay(3000);
+                if(LoadPwr>310){
+                    sysState = Overload;
+                    inverterState = 0;
+                    gpio_set_level(inverterCtrl, inverterState);
+                }
+            }
+        }//
+
         if(Temp>=40){
             gpio_set_level(InverterFanCtrl,1);
             if(!InverterFanState)

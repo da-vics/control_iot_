@@ -27,7 +27,6 @@ void app_main(){
   init_nvs();
   PinSetups();
   init_Screen();
-	drawImages();
   led_strip_install();
 
   xTaskCreate(ScreenUpdateTask, "BatteryTask", 9072, NULL, 13, NULL);

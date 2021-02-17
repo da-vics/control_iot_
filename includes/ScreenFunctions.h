@@ -3,7 +3,6 @@
 
 #include "SysteMeasurements.h"
 
-#define ClearScreen TFT_fillScreen(TFT_BLACK);
 #define SPI_BUS TFT_HSPI_HOST
 
 int PrevLoad = -1, PrevSmps = -1, prevSolar = -1;
@@ -146,8 +145,6 @@ void UpdateVal(){
 				TFT_drawRoundRect(200, 190, 40,33, 5, TFT_BLACK);
 		}//
 
-		
-
 		if(LoadPwr!=PrevLoad){ //load
 			_fg = TFT_GREEN;
 			_bg = TFT_BLACK;
@@ -176,16 +173,26 @@ void UpdateVal(){
 
 static void ScreenUpdateTask(){
 
-	TFT_drawRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
-	TFT_fillRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
-
-	TFT_drawRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
-	TFT_fillRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
 	bool bat1 = false,bat2=false,bat3=false,bat4=false,bat5=false,bat6=false;
 
 	while (1){
+
+		if(defaultLoad){
+
+			ClearScreen;
+			drawImages();
+			TFT_drawRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
+			TFT_fillRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
+
+			TFT_drawRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
+			TFT_fillRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
+			defaultLoad = false;
+			prevSolar = PrevLoad = PrevSmps = -1;
+			sysState = Normal;
+		}
 		
 		UpdateVal();
+		printf("%i\n", sysState);
 
 		if(sysState == Charging){
 
@@ -348,6 +355,23 @@ static void ScreenUpdateTask(){
 				TFT_fillRoundRect(25, 177, 60, 2, 0, TFT_RED);
 			}
 	}//end
+
+	else if(sysState == Overload){
+		ClearScreen;
+		_fg = TFT_RED;
+		TFT_setFont(TestFont, NULL);
+		TFT_print("Overload", CENTER, CENTER);
+		sysState = None;
+	}
+
+	else if(sysState == BatteryLow){
+		ClearScreen;
+		_fg = TFT_RED;
+		TFT_setFont(TestFont, NULL);
+		TFT_print("BatterylOW", CENTER, CENTER);
+		sysState = None;
+	}//
+
 	delay(500);
 	}
 }
