@@ -21,7 +21,7 @@
 
 #define MaxSampleTime 500
 #define ACS_Sensitivity 0.030518
-#define lowBattery 12.5f
+#define lowBattery 12.2f
 #define fullBattery 15.0
 const float batCal = (fullBattery - lowBattery);
 
@@ -304,6 +304,8 @@ static void GetSystemParams(){
         }//
 
         batteryPercentage = ((BatteryVoltage - lowBattery) / batCal) * 100;
+        batteryPercentage = (batteryPercentage > 100) ? 100 : batteryPercentage;
+        batteryPercentage = (batteryPercentage < 0) ? 0 : batteryPercentage;
 
         printf("batvol %f\n", BatteryVoltage);
         // printf("sol %i\n", SolarPwr);
