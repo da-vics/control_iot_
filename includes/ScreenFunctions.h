@@ -5,7 +5,7 @@
 
 #define SPI_BUS TFT_HSPI_HOST
 
-int PrevLoad = -1, PrevSmps = -1, prevSolar = -1;
+int PrevLoad = -1, PrevSmps = -1, prevSolar = -1, PrevBa3Percentage = 0;
 bool loadAnimate = false, solarAnimate = false, smpsAnimate = false;
 
 //screen initialisations
@@ -99,7 +99,7 @@ void drawImages(){
 
 	TFT_jpg_image(205, 60,3, SPIFFS_BASE_PATH "/images/AcOutput.jpg", NULL, 0);
 	TFT_jpg_image(205, 125,3, SPIFFS_BASE_PATH "/images/GridCharger.jpg", NULL, 0);
-	TFT_jpg_image(205, 185,2, SPIFFS_BASE_PATH "/images/SolarInput.jpg", NULL, 0);
+	TFT_jpg_image(205, 190,2, SPIFFS_BASE_PATH "/images/SolarInput.jpg", NULL, 0);
 }
 
 //update values
@@ -123,27 +123,36 @@ void UpdateVal(){
 		if(LoadPwr>=5){
 			loadAnimate = !loadAnimate;
 			if(loadAnimate)
-				TFT_drawRoundRect(200, 55, 33,33, 5, TFT_GREEN);
+				TFT_drawRoundRect(200, 55, 33,33, 10, TFT_GREEN);
 			else 
-				TFT_drawRoundRect(200, 55, 33,33, 5, TFT_BLACK);
+				TFT_drawRoundRect(200, 55, 33,33, 10, TFT_BLACK);
 		}//
+
+		else 
+			TFT_drawRoundRect(200, 55, 33,33, 10, TFT_BLACK);
 
 		if(SmpsPwr>=5){
 			smpsAnimate = !smpsAnimate;
 			if(smpsAnimate)
-				TFT_drawRoundRect(200, 120, 33,35, 5, TFT_WHITE);
+				TFT_drawRoundRect(200, 120, 33,35, 10, TFT_WHITE);
 			else 
-				TFT_drawRoundRect(200, 120, 33,35, 5, TFT_BLACK);
+				TFT_drawRoundRect(200, 120, 33,35, 10, TFT_BLACK);
 		}//
 
+		else 
+			TFT_drawRoundRect(200, 120, 33,35, 10, TFT_BLACK);
+
 		if(SolarPwr>=5){
-			color_t temp = {53,73,94};
+			color_t temp = {255,179,0};
 			solarAnimate = !solarAnimate;
 			if(solarAnimate)
-				TFT_drawRoundRect(200, 190, 40,33, 5, temp);
+				TFT_drawRoundRect(200, 190, 40,33, 10, temp);
 			else 
-				TFT_drawRoundRect(200, 190, 40,33, 5, TFT_BLACK);
+				TFT_drawRoundRect(200, 190, 40,33, 10, TFT_BLACK);
 		}//
+
+		else 
+			TFT_drawRoundRect(200, 190, 40,33, 10, TFT_BLACK);
 
 		if(LoadPwr!=PrevLoad){ //load
 			_fg = TFT_GREEN;
@@ -156,25 +165,27 @@ void UpdateVal(){
 		if(SmpsPwr!=PrevSmps){ //smps
 			_fg = TFT_WHITE;
 			_bg = TFT_BLACK;
-			TFT_fillRect(250, 120, 255,138, TFT_BLACK);
+			TFT_fillRect(250, 120, 255,38, TFT_BLACK);
 			TFT_print(smpstemp,250 , 130);
 			PrevSmps = SmpsPwr;
 		}//
 
-		if(prevSolar!=SolarPwr){ //solar
-			color_t temp = {53,73,94};
+		if(SolarPwr!=prevSolar){ //solar
+			color_t temp = {255,179,0};
 			_fg = temp;
 			_bg = TFT_BLACK;
 			TFT_fillRect(250, 190, 255,208, TFT_BLACK);
 			TFT_print(solartemp,250 , 200);
 			prevSolar = SolarPwr;
+			printf("%i\n", SolarPwr);
 		}//
 }//
+
+static void animateShow(){}
 
 static void ScreenUpdateTask(){
 
 	bool bat1 = false,bat2=false,bat3=false,bat4=false,bat5=false,bat6=false;
-
 	while (1){
 
 		if(defaultLoad){
@@ -190,17 +201,22 @@ static void ScreenUpdateTask(){
 			prevSolar = PrevLoad = PrevSmps = -1;
 			sysState = Normal;
 		}
-		
-		UpdateVal();
-		printf("%i\n", sysState);
+/**
+ * 12.5 13 14 15.3
+ * 
+*/
+
+		if(sysState == Charging || sysState == Normal)
+			UpdateVal();
 
 		if(sysState == Charging){
 
 			bool seg5_6 = (batteryPercentage >= 0 && batteryPercentage <=19) ? true : false;
-			bool seg5_4 = (batteryPercentage >= 20 && batteryPercentage <40) ? true : false;
-			bool seg5_3 = (batteryPercentage >= 40 && batteryPercentage <60) ? true : false;
-			bool seg5_2 = (batteryPercentage >= 60 && batteryPercentage <80) ? true : false;
-			bool seg5_1 = (batteryPercentage >= 80 && batteryPercentage <=100) ? true : false;
+			bool seg5_4 = (batteryPercentage >= 20 && batteryPercentage <39) ? true : false;
+			bool seg5_3 = (batteryPercentage >= 40 && batteryPercentage <59) ? true : false;
+			bool seg5_2 = (batteryPercentage >= 60 && batteryPercentage <79) ? true : false;
+			bool seg5_1 = (batteryPercentage >= 80 && batteryPercentage <=95) ? true : false;
+			bool seg5_0 = (batteryPercentage >= 96 && batteryPercentage <=100) ? true : false;
 
 			if(!seg5_6)
 				bat6 = false;
@@ -211,15 +227,18 @@ static void ScreenUpdateTask(){
 				bat5 = true;
 
 			else if(seg5_3)
-				bat5 = bat4 = true;
+				bat4 = true;
 
 			else if(seg5_2)
-				bat5 = bat4 = bat3 = true;
+				bat3 = true;
 
 			else if(seg5_1)
-				bat5 = bat4 = bat3 = bat2 = true;
+				bat2 = true;
 
-			if(seg5_6 ){
+			// else if (seg5_0)
+			// 	bat1 = true;
+
+			if(seg5_6){
 				bat5 = !bat5;
 				if(bat5){
 					TFT_drawRoundRect(25, 155, 60, 20, 5, TFT_GREEN);
@@ -256,7 +275,7 @@ static void ScreenUpdateTask(){
 				}
 				else clear_batGauage(25, 105, 60, 20, 0);
 
-				if(bat5 && bat4){
+				if(bat4){
 					TFT_drawRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
 					TFT_fillRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
 					TFT_drawRoundRect(25, 155, 60, 20, 5, TFT_GREEN);
@@ -272,7 +291,7 @@ static void ScreenUpdateTask(){
 				}
 				else clear_batGauage(25, 80, 60, 20, 0);
 
-				if(bat5 && bat4 && bat3){
+				if(bat3){
 					TFT_drawRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
 					TFT_fillRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
 					TFT_drawRoundRect(25, 130, 60, 20, 5, TFT_GREEN);
@@ -290,7 +309,7 @@ static void ScreenUpdateTask(){
 				}
 				else clear_batGauage(25, 55, 60, 20, 0);
 
-				if(bat5 && bat4 && bat3 && bat2){
+				if(bat2){
 					TFT_drawRoundRect(25, 80, 60, 20, 5, TFT_GREEN);
 					TFT_fillRoundRect(25, 80, 60, 20, 5, TFT_GREEN);
 					TFT_drawRoundRect(25, 105, 60, 20, 5, TFT_GREEN);
@@ -306,6 +325,44 @@ static void ScreenUpdateTask(){
 
 		else if(sysState == Normal){
 
+			if(batteryPercentage >= 90){
+					
+				if(PrevBa3Percentage<90){
+					sw = true;
+					PrevBa3Percentage = batteryPercentage;
+				}
+			}//
+			else if(batteryPercentage >= 80 && batteryPercentage<=89){
+				if(PrevBa3Percentage<80 || PrevBa3Percentage>89){
+					PrevBa3Percentage = batteryPercentage;
+					sw = true;
+				}
+			}//
+			else if(batteryPercentage >= 60 && batteryPercentage<=79){
+				if(PrevBa3Percentage<60 || PrevBa3Percentage>79){
+					PrevBa3Percentage = batteryPercentage;
+					sw = true;
+				}
+			}//
+			else if(batteryPercentage >= 40 && batteryPercentage <= 59){
+				if(PrevBa3Percentage<40 || PrevBa3Percentage>59){
+					PrevBa3Percentage = batteryPercentage;
+					sw = true;
+				}
+			}//
+			else if(batteryPercentage >= 20 && batteryPercentage<=39){
+				if(PrevBa3Percentage<20 || PrevBa3Percentage>39){
+					PrevBa3Percentage = batteryPercentage;
+					sw = true;
+				}
+			}//
+			else if(batteryPercentage>=0 && batteryPercentage<=19){
+				if(PrevBa3Percentage>19){
+					PrevBa3Percentage = batteryPercentage;
+					sw = true;
+				}
+			}//
+
 			if(sw){
 				sw = false;
 				clear_batGauage(25, 55, 60, 20, 0); //100
@@ -314,7 +371,7 @@ static void ScreenUpdateTask(){
 				clear_batGauage(25, 130, 60, 20, 0); // 40 
 				clear_batGauage(25, 155, 60, 20, 0); // 20
 				clear_batGauage(25, 177, 60, 2, 0); // 0
-			}
+			}//
 			bool bat1Condition = (batteryPercentage >= 90) ? true : false;
 			bool bat2Condition = (batteryPercentage >= 80 && batteryPercentage<=89) ? true : false;
 			bool bat3Condition = (batteryPercentage >= 60 && batteryPercentage<=79) ? true : false;
@@ -372,9 +429,8 @@ static void ScreenUpdateTask(){
 		sysState = None;
 	}//
 
-	delay(500);
+	delay(400);
 	}
-}
-
+}//
 
 #endif //SCREENFUNCTIONS_H

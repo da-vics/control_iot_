@@ -6,23 +6,34 @@
 #include <freertos/task.h>
 #include "led_strip.h"
 
+#define delay(milli) vTaskDelay(milli / portTICK_RATE_MS);
+
 #define LED_TYPE LED_STRIP_SK6812
 #define LED_GPIO 15
 #define LED_CHANNEL RMT_CHANNEL_0
 
+typedef enum
+{
+    None,
+    Normal,
+    Charging,
+    Overload,
+    BatteryLow
+} SystemState;
+
+SystemState sysState = Normal;
+
 static const rgb_t colors[] = {
-    { .raw = { 0x00, 0x00, 0x2f } },
-    { .raw = { 0x00, 0x2f, 0x00 } },
-    { .raw = { 0x00, 0x3f, 0x00 } },
-    { .raw = { 0x00, 0x4f, 0x00 } },
-    { .raw = { 0x00, 0x5f, 0x00 } },
-    { .raw = { 0x00, 0x6f, 0x00 } },
-    { .raw = { 0x00, 0x7f, 0x00 } },
-    { .raw = { 0x00, 0x8f, 0x00 } },
-    { .raw = { 0x00, 0x9f, 0x00 } },
-    { .raw = { 0x00, 0xff, 0x00 } },
-    { .raw = { 0x2f, 0x00, 0x00 } },
+    { .raw = { 255, 0, 0 } },
+    { .raw = { 255, 127, 0 } },
+    { .raw = { 255, 255, 0 } },
+    { .raw = { 0, 255, 0 } },
+    { .raw = { 0, 0, 255 } },
+    { .raw = { 75, 0, 130 } },
+    { .raw = { 143, 0, 255 } }
 };
+
+const rgb_t colorsDef = {.raw = {255, 0, 0}};
 
 #define COLORS_TOTAL (sizeof(colors) / sizeof(rgb_t))
 
@@ -41,15 +52,21 @@ static void test(void *pvParameters)
 
     while (1)
     {
-        ESP_ERROR_CHECK(led_strip_fill(&strip, 0, strip.length, colors[c]));
-        ESP_ERROR_CHECK(led_strip_flush(&strip));
+        if(sysState == Charging){
+            ESP_ERROR_CHECK(led_strip_fill(&strip, 0, strip.length, colors[c]));
+            ESP_ERROR_CHECK(led_strip_flush(&strip));
 
-        delay(1000);
-        if (++c >= COLORS_TOTAL)
-            c = 0;
+            delay(500);
+            if (++c >= COLORS_TOTAL)
+                c = 0;
+        }
+        else{
+            ESP_ERROR_CHECK(led_strip_fill(&strip, 0, strip.length, colorsDef));
+            ESP_ERROR_CHECK(led_strip_flush(&strip));
+        }
         delay(500);
     }
-}
+}//
 
 #endif //RGB_CTRL_H
 

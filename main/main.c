@@ -16,7 +16,6 @@
 
 #include "../includes/ScreenFunctions.h"
 #include "../includes/Utilities.h"
-#include "../includes/RGBCtrl.h"
 
 // extern "C" {
 //   void app_main();
@@ -29,9 +28,9 @@ void app_main(){
   init_Screen();
   led_strip_install();
 
-  xTaskCreate(ScreenUpdateTask, "BatteryTask", 9072, NULL, 13, NULL);
-  xTaskCreate(GetSystemInputTask, "SystemInputTask", 9072, NULL, 14, NULL);
-  xTaskCreate(GetSystemParams, "SystemParamsTask", 9072, NULL, 12, NULL);
-  xTaskCreate(test, "test", 4072, NULL, 10, NULL);
+  xTaskCreate(ScreenUpdateTask, "BatteryTask", 14072, NULL, 14, NULL);
+  xTaskCreate(GetSystemInputTask, "SystemInputTask", 7072, NULL, 13, NULL);
+  xTaskCreate(GetSystemParams, "SystemParamsTask", 12072, NULL, 12, NULL);
+  // xTaskCreate(test, "test", 4072, NULL, 10, NULL);
 
 }
