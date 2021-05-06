@@ -5,8 +5,17 @@
 
 #define SPI_BUS TFT_HSPI_HOST
 
-int PrevLoad = -1, PrevSmps = -1, prevSolar = -1, PrevBa3Percentage = 0;
+int PrevLoad = -1, PrevSmps = -1, prevSolar = -1;
 bool loadAnimate = false, solarAnimate = false, smpsAnimate = false;
+bool colorchange = false, colorchangEvent = false;
+
+typedef enum{
+	clear_state,bat1_state, bat2_state, 
+	bat3_state, bat4_state, 
+	bat5_state, bat6_state,Empty
+}prevBatState;
+
+prevBatState prevstate = clear_state;
 
 //screen initialisations
 void init_Screen(){
@@ -90,9 +99,13 @@ void clear_batGauage(int x, int y, int w, int h, int r){
 	TFT_fillRoundRect(x, y, w, h, r, TFT_WHITE);
 }
 
-// void clear_batStates(bool &b1,bool &b2, bool &b3, bool &b4, bool &b5, bool &b6){
-// 	b1 = b2 = b3 = b4 = b5 = b6 = false;
-// }
+void clearAllbatGauage(){
+	TFT_fillRoundRect(120 ,67,80,23,7,TFT_WHITE); //100%
+	TFT_fillRoundRect(120 ,92,80,23,7,TFT_WHITE); //80%
+	TFT_fillRoundRect(120 ,117,80,23,7,TFT_WHITE);//60%
+	TFT_fillRoundRect(120 ,142,80,23,7,TFT_WHITE);//40%
+	TFT_fillRoundRect(120 ,167,80,23,7,TFT_WHITE);//20%
+}
 
 //display images
 void drawImages(){
@@ -100,13 +113,15 @@ void drawImages(){
 	TFT_jpg_image(270, 110,3, SPIFFS_BASE_PATH "/images/AcOutput.jpg", NULL, 0);
 	TFT_jpg_image(15, 105,3, SPIFFS_BASE_PATH "/images/GridCharger.jpg", NULL, 0);
 
-	TFT_drawRoundRect(110 ,50,100,150, 20, TFT_DARKGREY);
+	TFT_drawRoundRect(110 ,50,100,150, 20, TFT_DARKGREY);//outer-body
 	TFT_fillRoundRect(110 ,50,100,150, 20, TFT_DARKGREY);
-	TFT_fillRoundRect(115 ,55,90,140, 20, TFT_WHITE	);
 
+	TFT_fillRoundRect(115 ,55,90,140, 20, TFT_WHITE	); //inner-body
 	
-	TFT_drawRoundRect(139, 39, 40, 10, 0, TFT_DARKGREY);
+	TFT_drawRoundRect(139, 39, 40, 10, 0, TFT_DARKGREY);//head
 	TFT_fillRoundRect(139, 39, 40, 10, 0, TFT_DARKGREY);
+
+	// TFT_drawCircle(60, 120, 2, TFT_WHITE);
 }
 
 //update values
@@ -132,6 +147,8 @@ void UpdateVal(){
 				TFT_drawRoundRect(265,105, 33,33, 10, TFT_GREEN);
 			else 
 				TFT_drawRoundRect(265, 105, 33,33, 10, TFT_BLACK);
+
+			delay(200);
 		}//
 
 		else 
@@ -143,16 +160,16 @@ void UpdateVal(){
 				TFT_drawRoundRect(10, 100, 33,35, 10, TFT_WHITE);
 			else 
 				TFT_drawRoundRect(10, 100, 33,35, 10, TFT_BLACK);
+			delay(200);
 		}//
 
 		else 
 			TFT_drawRoundRect(10, 100, 33,35, 10, TFT_BLACK);
 
-
 		if(LoadPwr!=PrevLoad){ //load
 			_fg = TFT_GREEN;
 			_bg = TFT_BLACK;
-			TFT_fillRect(265, 145, 255,38, TFT_BLACK);
+			TFT_fillRect(265,145,255,140, TFT_BLACK);
 			TFT_print(loadtemp,265 , 145);
 			PrevLoad = LoadPwr;
 		}//
@@ -160,59 +177,134 @@ void UpdateVal(){
 		if(SmpsPwr!=PrevSmps){ //smps
 			_fg = TFT_WHITE;
 			_bg = TFT_BLACK;
-			TFT_fillRect(15, 140, 255,38, TFT_BLACK);
+			TFT_fillRect(15, 140, 45,160, TFT_BLACK);
 			TFT_print(smpstemp,15,140);
 			PrevSmps = SmpsPwr;
 		}//
 
 }//
 
-static void animateShow(){}
-
+void fillBat(){
+	TFT_fillRoundRect(120 ,67,80,23,7,TFT_GREEN); //100%
+	TFT_fillRoundRect(120 ,92,80,23,7,TFT_GREEN); //80%
+	TFT_fillRoundRect(120 ,117,80,23,7,TFT_GREEN);//60%
+	TFT_fillRoundRect(120 ,142,80,23,7,TFT_GREEN);//40%
+	TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+}
 static void ScreenUpdateTask(){
 
-	bool bat1 = false,bat2=false,bat3=false,bat4=false,bat5=false,bat6=false;
+	bool bat1 = false, bat2 = false, bat3 = false,
+		 bat4 = false, bat5 = false, bat6 = false, bat7 = false;
+
 	while (1){
 
 		if(defaultLoad){
 
 			ClearScreen;
 			drawImages();
-			// TFT_drawRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
-			// TFT_fillRoundRect(42, 35, 25, 30, 5, TFT_WHITE);
-
-			// TFT_drawRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
-			// TFT_fillRoundRect(20, 50, 70, 130, 5, TFT_WHITE);
 			defaultLoad = false;
 			prevSolar = PrevLoad = PrevSmps = -1;
 			sysState = Normal;
 		}
 /**
- * 12.5 13 14 15.3
+ * 12.2 13 14 15.0
  * 
 */
+		if(sysState == Charging || sysState == Normal)
+			UpdateVal();
+		
+		if(sysState == Normal){
 
-		// if(sysState == Charging || sysState == Normal)
-			// UpdateVal();
+			bat1 = (batteryPercentage >= 86 && batteryPercentage <= 100) ? true : false;
+			bat2 = (batteryPercentage >= 76 && batteryPercentage <= 85) ? true : false;
+			bat3 = (batteryPercentage >= 56 && batteryPercentage <= 75) ? true : false;
+			bat4 = (batteryPercentage >= 36 && batteryPercentage <= 55) ? true : false;
+			bat5 = (batteryPercentage >= 15 && batteryPercentage <= 35) ? true : false;
+			bat6 = (batteryPercentage>=1 && batteryPercentage <= 14) ? true : false;
+			bat7 = (batteryPercentage == 0) ? true : false;
 
-	if(sysState == Overload){
-		ClearScreen;
-		_fg = TFT_RED;
-		TFT_setFont(TestFont, NULL);
-		TFT_print("Overload", CENTER, CENTER);
-		sysState = None;
-	}
+			if(batteryPercentage >= 15 && batteryPercentage <= 20)
+				colorchange = true;	
+			else{
+				colorchangEvent = false;
+				colorchange = false;
+			}
 
-	else if(sysState == BatteryLow){
-		ClearScreen;
-		_fg = TFT_RED;
-		TFT_setFont(TestFont, NULL);
-		TFT_print("BatterylOW", CENTER, CENTER);
-		sysState = None;
+			if(bat1 == true && prevstate!=bat1_state){
+				prevstate = bat1_state;
+				clearAllbatGauage();
+				fillBat();
+			}//
+
+			else if(bat2 == true && prevstate!= bat2_state){
+				clearAllbatGauage();
+				TFT_fillRoundRect(120 ,92,80,23,7,TFT_GREEN); //80%
+				TFT_fillRoundRect(120 ,117,80,23,7,TFT_GREEN);//60%
+				TFT_fillRoundRect(120 ,142,80,23,7,TFT_GREEN);//40%
+				TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+				prevstate = bat2_state;
+			}//
+			
+			else if(bat3 == true && prevstate!=bat3_state){
+				clearAllbatGauage();
+				TFT_fillRoundRect(120 ,117,80,23,7,TFT_GREEN);//60%
+				TFT_fillRoundRect(120 ,142,80,23,7,TFT_GREEN);//40%
+				TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+				prevstate = bat3_state;
+			}//
+
+			else if(bat4 == true && prevstate!=bat4_state){
+				clearAllbatGauage();
+				TFT_fillRoundRect(120 ,142,80,23,7,TFT_GREEN);//40%
+				TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+				prevstate = bat4_state;
+			}//
+
+			else if((bat5 == true && prevstate!=bat5_state) || colorchange){
+				if(!colorchange){
+					clearAllbatGauage();
+					TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+				}
+				else if(colorchange && colorchangEvent == false){
+					clearAllbatGauage();
+					TFT_fillRoundRect(120 ,167,80,23,7,TFT_RED);//20%
+					colorchangEvent = true;
+				}
+				prevstate = bat5_state;
+			}//
+
+			else if(bat6 == true && prevstate!=bat6_state){
+				clearAllbatGauage();
+				TFT_fillRoundRect(130 ,190,60,5,1,TFT_RED);//14%
+				prevstate = bat6_state;
+			}
+
+			else if(bat7 == true && prevstate!=Empty){
+				clearAllbatGauage();
+				clear_batGauage(130, 190, 60, 5, 1);
+				prevstate = Empty;
+			}
+
+		}//end
+
+		if(sysState == Overload){
+			ClearScreen;
+			_fg = TFT_RED;
+			TFT_setFont(TestFont, NULL);
+			TFT_print("Overload", CENTER, CENTER);
+			sysState = None;
+		}
+
+		else if(sysState == BatteryLow){
+			ClearScreen;
+			_fg = TFT_RED;
+			TFT_setFont(TestFont, NULL);
+			TFT_print("BatterylOW", CENTER, CENTER);
+			sysState = None;
+		}//
+
+		delay(500);
 	}//
-
-	delay(400);
-	}
 }//
 
 #endif //SCREENFUNCTIONS_H
