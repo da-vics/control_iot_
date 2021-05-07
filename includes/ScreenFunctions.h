@@ -14,8 +14,14 @@ typedef enum{
 	bat3_state, bat4_state, 
 	bat5_state, bat6_state,Empty
 }prevBatState;
-
 prevBatState prevstate = clear_state;
+
+typedef enum{
+	clear_charge,bat1_charge, bat2_charge, 
+	bat3_charge, bat4_charge, 
+	bat5_charge, bat6_charge
+}prevBatCharge;
+prevBatCharge prevcharge = clear_charge;
 
 //screen initialisations
 void init_Screen(){
@@ -105,6 +111,7 @@ void clearAllbatGauage(){
 	TFT_fillRoundRect(120 ,117,80,23,7,TFT_WHITE);//60%
 	TFT_fillRoundRect(120 ,142,80,23,7,TFT_WHITE);//40%
 	TFT_fillRoundRect(120 ,167,80,23,7,TFT_WHITE);//20%
+	TFT_fillRoundRect(130 ,190,60,5,1,TFT_WHITE);//10%
 }
 
 //display images
@@ -148,7 +155,7 @@ void UpdateVal(){
 			else 
 				TFT_drawRoundRect(265, 105, 33,33, 10, TFT_BLACK);
 
-			delay(200);
+			delay(100);
 		}//
 
 		else 
@@ -160,7 +167,7 @@ void UpdateVal(){
 				TFT_drawRoundRect(10, 100, 33,35, 10, TFT_WHITE);
 			else 
 				TFT_drawRoundRect(10, 100, 33,35, 10, TFT_BLACK);
-			delay(200);
+			delay(100);
 		}//
 
 		else 
@@ -181,7 +188,6 @@ void UpdateVal(){
 			TFT_print(smpstemp,15,140);
 			PrevSmps = SmpsPwr;
 		}//
-
 }//
 
 void fillBat(){
@@ -199,7 +205,6 @@ static void ScreenUpdateTask(){
 	while (1){
 
 		if(defaultLoad){
-
 			ClearScreen;
 			drawImages();
 			defaultLoad = false;
@@ -216,11 +221,11 @@ static void ScreenUpdateTask(){
 		if(sysState == Normal){
 
 			bat1 = (batteryPercentage >= 86 && batteryPercentage <= 100) ? true : false;
-			bat2 = (batteryPercentage >= 76 && batteryPercentage <= 85) ? true : false;
-			bat3 = (batteryPercentage >= 56 && batteryPercentage <= 75) ? true : false;
-			bat4 = (batteryPercentage >= 36 && batteryPercentage <= 55) ? true : false;
-			bat5 = (batteryPercentage >= 15 && batteryPercentage <= 35) ? true : false;
-			bat6 = (batteryPercentage>=1 && batteryPercentage <= 14) ? true : false;
+			bat2 = (batteryPercentage >= 66 && batteryPercentage <= 85) ? true : false;
+			bat3 = (batteryPercentage >= 46 && batteryPercentage <= 65) ? true : false;
+			bat4 = (batteryPercentage >= 26 && batteryPercentage <= 45) ? true : false;
+			bat5 = (batteryPercentage >= 10 && batteryPercentage <= 25) ? true : false;
+			bat6 = (batteryPercentage>=1 && batteryPercentage <= 9) ? true : false;
 			bat7 = (batteryPercentage == 0) ? true : false;
 
 			if(batteryPercentage >= 15 && batteryPercentage <= 20)
@@ -287,7 +292,106 @@ static void ScreenUpdateTask(){
 
 		}//end
 
-		if(sysState == Overload){
+		if(sysState !=Charging)
+			prevcharge = clear_charge;
+
+		if(sysState == Charging){
+
+			prevstate = clear_state;
+			if(prevcharge == clear_charge)
+				clearAllbatGauage();
+
+			bool seg5_6 = (batteryPercentage >=10  && batteryPercentage <=25) ? true : false;
+			bool seg5_4 = (batteryPercentage >= 26 && batteryPercentage <=45) ? true : false;
+			bool seg5_3 = (batteryPercentage >= 46 && batteryPercentage <=65) ? true : false;
+			bool seg5_2 = (batteryPercentage >= 66 && batteryPercentage <85) ? true : false;
+			bool seg5_1 = (batteryPercentage >= 86 && batteryPercentage <=100) ? true : false;
+
+			if(!seg5_6)
+				bat6 = false;
+			if(seg5_6)
+				bat6 = true;
+
+			else if(seg5_4)
+				bat5 = true;
+
+			else if(seg5_3)
+				bat5 = bat4 = true;
+
+			else if(seg5_2)
+				bat5 = bat4 = bat3 = true;
+
+			else if(seg5_1)
+				bat5 = bat4 = bat3 = bat2 = true;
+
+			if(seg5_6 ){
+				bat5 = !bat5;
+				if(bat5)
+					TFT_fillRoundRect(120, 142, 80, 23, 7, TFT_GREEN);
+
+				else
+					clear_batGauage(120 ,142,80,23,7);
+
+				if(bat6 && prevcharge != bat6_charge){
+					TFT_fillRoundRect(120, 167, 80, 23, 7, TFT_GREEN);
+					prevcharge = bat6_charge;
+				}
+			}//
+
+			else if(seg5_4){
+				bat4 = !bat4;
+				if(bat4)
+					TFT_fillRoundRect(120 ,117,80,23,7,TFT_GREEN);//60%
+
+				else clear_batGauage(120 ,117,80,23,7);//
+
+				if(bat5 && prevcharge != bat5_charge){
+					TFT_fillRoundRect(120 ,142,80,23,7,TFT_GREEN);//40%
+					TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+					prevcharge = bat5_charge;
+				}
+			}//
+
+			else if(seg5_3){
+				bat3 = !bat3;
+				if(bat3)
+					TFT_fillRoundRect(120 ,92,80,23,7,TFT_GREEN);
+
+				else clear_batGauage(120 ,92,80,23,7);
+
+				if(bat5 && bat4 && prevcharge != bat4_charge){
+					TFT_fillRoundRect(120 ,117,80,23,7,TFT_GREEN);//60%
+					TFT_fillRoundRect(120 ,142,80,23,7,TFT_GREEN);//40%
+					TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+					prevcharge = bat4_charge;
+				}
+			}//
+
+			else if(seg5_2){
+				bat2 = !bat2;
+				if(bat2)
+					TFT_fillRoundRect(120 ,67,80,23,7, TFT_GREEN);
+	
+				else clear_batGauage(120 ,67,80,23,7);
+
+				if(bat5 && bat4 && bat3 && prevcharge != bat3_charge){
+					TFT_fillRoundRect(120 ,92,80,23,7,TFT_GREEN); //80%
+					TFT_fillRoundRect(120 ,117,80,23,7,TFT_GREEN);//60%
+					TFT_fillRoundRect(120 ,142,80,23,7,TFT_GREEN);//40%
+					TFT_fillRoundRect(120 ,167,80,23,7,TFT_GREEN);//20%
+					prevcharge = bat3_charge;
+				}
+			}//
+
+			else if(seg5_1 && prevcharge == bat2_charge){
+				fillBat();
+				prevcharge = bat2_charge;
+
+			}//	
+
+		}//end
+
+		else if(sysState == Overload){
 			ClearScreen;
 			_fg = TFT_RED;
 			TFT_setFont(TestFont, NULL);
